@@ -24,6 +24,14 @@ public class PlannerActivity extends AppCompatActivity implements View.OnClickLi
     private RecyclerView noteView;
     private List<NoteEntity> notes;
     private Context context;
+    private MyDatabaseHelper helper;
+    private SQLiteDatabase db;
+    private NoteAdapter adapter;
+
+    private final String FIRST_INSERT_NOTE = "insert into note values " +
+            "(1,'Welcome to note','Marine assistance contains a built-in note " +
+            "which helps user record everything they feel important or save their " +
+            "feeling of anything.', '2017-03-29 11:00')";
 
 
     @Override
@@ -39,48 +47,73 @@ public class PlannerActivity extends AppCompatActivity implements View.OnClickLi
         noteView.setLayoutManager(layoutManager);
         noteView.setItemAnimator(new DefaultItemAnimator());
 
-        notes = getNotesFromDatabase();
+        initNoteInDatabase();
 
-        NoteAdapter adapter = new NoteAdapter(notes);
+        notes = retriveNoteFromDatabase();
+
+        adapter = new NoteAdapter(notes);
 
         noteView.setAdapter(adapter);
         addNoteBtn.setOnClickListener(this);
     }
 
+    public void addNoteToDatabase(){
+
+        helper = new MyDatabaseHelper(context);
+        db = helper.getReadableDatabase();
+
+
+
+    }
+
+    public List<NoteEntity> retriveNoteFromDatabase() {
+        helper = new MyDatabaseHelper(context);
+        db = helper.getReadableDatabase();
+
+        List<NoteEntity> noteEntities = new ArrayList<NoteEntity>();
+
+        Cursor cursor = db.rawQuery("select * from note", null);
+
+        cursor.moveToFirst();
+
+        do {
+            String title = cursor.getString(cursor.getColumnIndex("title"));
+            String content = cursor.getString(cursor.getColumnIndex("content"));
+            String time = cursor.getString(cursor.getColumnIndex("time"));
+
+            NoteEntity noteEntity = new NoteEntity(time, title, content);
+            noteEntities.add(noteEntity);
+
+        } while (cursor.moveToNext());
+
+            db.close();
+        helper.close();
+
+        return noteEntities;
+    }
+
+    public void initNoteInDatabase(){
+
+        helper = new MyDatabaseHelper(context);
+        db = helper.getReadableDatabase();
+        Cursor cursor = db.rawQuery("Select * from note", null);
+        try {
+            if (cursor.getCount() == 0) {
+                db.rawQuery(FIRST_INSERT_NOTE, null);
+                Toast.makeText(this, "Insert successful", Toast.LENGTH_SHORT).show();
+            }
+        } catch (Exception e) {
+            Toast.makeText(this, "Fail to insert record to table", Toast.LENGTH_SHORT).show();
+        }
+
+//        if (cursor.getCount() > 0) {
+//            Toast.makeText(this, "Read data from database: " + cursor.getCount(), Toast.LENGTH_SHORT).show();
+//        }
+    }
+
+
     @Override
     public void onClick(View view) {
         Toast.makeText(this, "Floating Button Clicked", Toast.LENGTH_SHORT).show();
-    }
-
-    public List<NoteEntity> getNotesFromDatabase() {
-
-        MyDatabaseHelper helper = new MyDatabaseHelper(context);
-        SQLiteDatabase db = helper.getReadableDatabase();
-
-        final List<NoteEntity> noteList = new ArrayList<NoteEntity>();
-
-        Cursor cursor = db.rawQuery("select * from note", null);
-        if (cursor.getCount() != 0) {
-            cursor.moveToFirst();
-            while (cursor.moveToNext()) {
-
-                String time = cursor.getString(cursor.getColumnIndex("time"));
-                String title = cursor.getString(cursor.getColumnIndex("title"));
-                String content = cursor.getString(cursor.getColumnIndex("content"));
-
-                NoteEntity note = new NoteEntity(time, title, content);
-                noteList.add(note);
-            }
-        }
-
-        if (noteList.size() == 0) {
-            NoteEntity note = new NoteEntity("2017-03-29 11:00", "Welcome to note",
-                    "Marine assistance contains a built-in note which helps user record everything they feel important or save their feeling of anything.");
-            noteList.add(note);
-        }
-
-        db.close();
-        helper.close();
-        return noteList;
     }
 }

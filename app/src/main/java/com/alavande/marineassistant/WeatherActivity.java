@@ -89,17 +89,18 @@ public class WeatherActivity extends AppCompatActivity {
         windspeedInfo = (TextView) findViewById(R.id.windspeedInfo);
         weatherInfo = (TextView) findViewById(R.id.weatherInfo);
         weatherpic = (ImageView) findViewById(R.id.weatherpic);
-        button_1.setOnClickListener(new View.OnClickListener() {
+//        button_1.setOnClickListener(new View.OnClickListener() {
+//            @Override
+//            public void onClick(View v) {
+//
+//            }
+//        });
+        new Thread(new Runnable() {
             @Override
-            public void onClick(View v) {
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        sendRequestWithOKHttp();
-                    }
-                }).start();
+            public void run() {
+                sendRequestWithOKHttp();
             }
-        });
+        }).start();
     }
     private String buildWeatherAPIString(String lat,String lon){
         String key="&appid=4411135c80bf7b41e26384708252cfa6";

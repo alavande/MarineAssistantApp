@@ -189,6 +189,6 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
         View view = getLayoutInflater().inflate(R.layout.loading_view_layout, null);
         //把自定义的布局设置到dialog中，注意，布局设置一定要在show之前。从第二个参数分别填充内容与边框之间左、上、右、下、的像素
         build.setView(view, 0, 0, 0, 0);
-        //一定要先show出来再设置dialog的参数，不然就不会改变dialog的大小了
+
     }
 }

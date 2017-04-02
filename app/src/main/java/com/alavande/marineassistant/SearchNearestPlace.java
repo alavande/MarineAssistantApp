@@ -110,4 +110,32 @@ public class SearchNearestPlace {
         helper.close();
         return boatAccesses;
     }
+
+    public List<BoatMooring> searchNearestBoatMooring(Context context){
+
+        helper = new MyDatabaseHelper(context);
+        db = helper.getReadableDatabase();
+
+        List<BoatMooring> boatMoorings = new ArrayList<BoatMooring>();
+
+        Cursor cursor = db.rawQuery("select * from mooring", null);
+        cursor.moveToFirst();
+
+        while(cursor.moveToNext()){
+
+            String name = cursor.getString(cursor.getColumnIndex("name"));
+            String location = cursor.getString(cursor.getColumnIndex("location"));
+            String type = cursor.getString(cursor.getColumnIndex("type"));
+            double longitude = cursor.getDouble(cursor.getColumnIndex("longitude"));
+            double latitude = cursor.getDouble(cursor.getColumnIndex("latitude"));
+
+
+            BoatMooring boatMooring = new BoatMooring(longitude, latitude, name, location, type);
+            boatMoorings.add(boatMooring);
+
+        }
+        db.close();
+        helper.close();
+        return boatMoorings;
+    }
 }

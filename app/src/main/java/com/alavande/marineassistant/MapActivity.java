@@ -46,6 +46,7 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.LatLngBounds;
 import com.google.android.gms.maps.model.Marker;
@@ -76,7 +77,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     private MapFragment mapFragment;
     private GoogleMap map;
-    private Marker marker, hospitalMarker, policeMarker, searchMarker, boatAccessMarker;
+    private Marker marker, hospitalMarker, policeMarker, searchMarker,
+            boatAccessMarker, boatMooringMarker, secondBoatAccessMarker, secondBoatMooringMarker;
     private GoogleApiClient client;
     private LocationRequest locationRequest;
     private View mapView;
@@ -89,7 +91,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     private Hospital nearestHostpital;
     private Police nearestPolice;
-    private BoatAccess nearestBoatAccess;
+    private BoatAccess nearestBoatAccess, secondBoatAccess;
+    private BoatMooring nearestBoatMooring, secondBoatMooring;
 
     private TextView bottomTitle, bottomContent, phoneText, loccationText;
     private Button navigationBtn;
@@ -186,6 +189,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 searchHospital();
                 searchPolice();
                 searchBoatAccess();
+                searchBoatMooring();
             }
         }).start();
 
@@ -420,23 +424,32 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         switch (item.getItemId()) {
             case R.id.nav_police:
 
-                searchPolice();
+//                searchPolice();
                 zoomMapToFitMarker(policeMarker);
                 break;
             case R.id.nav_hospital:
 
-                searchHospital();
+//                searchHospital();
                 zoomMapToFitMarker(hospitalMarker);
                 break;
             case R.id.nav_boat_access:
 
-                searchBoatAccess();
-                zoomMapToFitMarker(boatAccessMarker);
+//                searchBoatAccess();
+                if (secondBoatAccessMarker != null) {
+                    zoomMapToFitTwoMarkers(boatAccessMarker, secondBoatAccessMarker);
+                } else {
+                    zoomMapToFitMarker(boatAccessMarker);
+                }
                 break;
-            case R.id.nav_boat_facilities:
+            case R.id.nav_boat_mooring:
 
-//                popupWindowForFacilities();
-                Toast.makeText(this, "In progress...", Toast.LENGTH_SHORT).show();
+//                searchBoatMooring();
+                if (secondBoatMooringMarker != null) {
+                    zoomMapToFitTwoMarkers(boatMooringMarker, secondBoatMooringMarker);
+                } else {
+                    zoomMapToFitMarker(boatMooringMarker);
+                }
+//                Toast.makeText(this, "In progress...", Toast.LENGTH_SHORT).show();
                 break;
             default:
                 break;
@@ -450,6 +463,19 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
         builder.include(currentLatLng);
         builder.include(marker.getPosition());
+
+        LatLngBounds bounds = builder.build();
+
+        int padding = 200;
+        CameraUpdate cu = CameraUpdateFactory.newLatLngBounds(bounds, padding);
+        map.animateCamera(cu);
+    }
+
+    public void zoomMapToFitTwoMarkers(Marker marker1, Marker marker2){
+        LatLngBounds.Builder builder = new LatLngBounds.Builder();
+        builder.include(currentLatLng);
+        builder.include(marker1.getPosition());
+        builder.include(marker2.getPosition());
 
         LatLngBounds bounds = builder.build();
 
@@ -590,6 +616,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         options.position(new LatLng(hospital.getLatitude(), hospital.getLongitude()));
         options.title(hospital.getName()+ ", Hospital");
         options.snippet(hospital.getStreet() + ", " + hospital.getPostcode() );
+        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.hospital_icon));
+
         hospitalMarker = map.addMarker(options);
         hospitalMarker.setTag(hospital.getPhone());
     }
@@ -650,6 +678,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         options.position(new LatLng(police.getLatitude(), police.getLongitude()));
         options.title(police.getStation() + ", Police Station");
         options.snippet(police.getPsa() + ", " + police.getPostcode());
+        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.police_icon));
 
         policeMarker = map.addMarker(options);
         policeMarker.setTag(police.getPhoneNum());
@@ -668,6 +697,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
                 nearestBoatAccess = null;
 
+                secondBoatAccess = null;
+
                 LatLng boatAccessLatlng;
 
                 double distance = -1;
@@ -684,6 +715,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
                     if (distance > computeDistance) {
                         distance = computeDistance;
+
+                        secondBoatAccess = nearestBoatAccess;
                         nearestBoatAccess = b;
                     }
                 }
@@ -694,6 +727,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
                         if (nearestBoatAccess != null) {
                             addNeareatBoatAccessToMap(nearestBoatAccess);
+                            if (secondBoatAccess != null) {
+                                addSecondBoatAccessToMap(secondBoatAccess);
+                            }
                         } else {
                             Toast.makeText(context, "Nothing found.", Toast.LENGTH_SHORT).show();
                         }
@@ -710,14 +746,118 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             boatAccessMarker.remove();
         }
 
+
+
         MarkerOptions options = new MarkerOptions();
         options.position(new LatLng(boatAccess.getLatitude(), boatAccess.getLongitude()));
-        options.title(boatAccess.getName() + ", " + boatAccess.getType() + ", Boat Point");
+        options.title(boatAccess.getName() + ", " + boatAccess.getType() + ", Boat Ramp");
         options.snippet(boatAccess.getLocation());
+        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.boat_point_icon));
 
         boatAccessMarker = map.addMarker(options);
 
     }
+
+    public void addSecondBoatAccessToMap(BoatAccess boatAccess){
+
+        if (secondBoatAccessMarker != null) {
+            secondBoatAccessMarker.remove();
+        }
+
+        MarkerOptions options = new MarkerOptions();
+        options.position(new LatLng(boatAccess.getLatitude(), boatAccess.getLongitude()));
+        options.title(boatAccess.getName() + ", " + boatAccess.getType() + ", Boat Ramp");
+        options.snippet(boatAccess.getLocation());
+        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.boat_point_icon));
+
+        secondBoatAccessMarker = map.addMarker(options);
+    }
+
+    public void searchBoatMooring(){
+
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+
+                SearchNearestPlace search = new SearchNearestPlace();
+
+                List<BoatMooring> boatMoorings = search.searchNearestBoatMooring(context);
+
+                nearestBoatMooring = null;
+                secondBoatMooring = null;
+
+                LatLng boatMooringLatlng;
+
+                double distance = -1;
+
+                for (BoatMooring b : boatMoorings) {
+
+                    boatMooringLatlng = new LatLng(b.getLatitude(), b.getLongitude());
+
+                    double computeDistance = SphericalUtil.computeDistanceBetween(currentLatLng, boatMooringLatlng);
+
+                    if (distance == -1) {
+                        distance = computeDistance;
+                    }
+
+                    if (distance > computeDistance) {
+                        distance = computeDistance;
+
+                        secondBoatMooring = nearestBoatMooring;
+                        nearestBoatMooring = b;
+                    }
+                }
+
+                handler.post(new Runnable() {
+                    @Override
+                    public void run() {
+
+                        if (nearestBoatMooring != null) {
+                            addNeareatBoatMooringToMap(nearestBoatMooring);
+                            if (secondBoatMooring != null){
+                                addSecondBoatMooringToMap(secondBoatMooring);
+                            }
+
+                        } else {
+                            Toast.makeText(context, "Nothing found.", Toast.LENGTH_SHORT).show();
+                        }
+
+                    }
+                });
+            }
+        }).start();
+    }
+
+    public void addNeareatBoatMooringToMap(BoatMooring boatMooring){
+
+        if (boatMooringMarker != null) {
+            boatMooringMarker.remove();
+        }
+
+        MarkerOptions options = new MarkerOptions();
+        options.position(new LatLng(boatMooring.getLatitude(), boatMooring.getLongitude()));
+        options.title(boatMooring.getName() + ", " + boatMooring.getType() + ", Boat Mooring");
+        options.snippet(boatMooring.getLocation());
+        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.mooring_icon1));
+
+        boatMooringMarker = map.addMarker(options);
+    }
+
+    public void addSecondBoatMooringToMap(BoatMooring boatMooring){
+
+        if (secondBoatMooringMarker != null) {
+            secondBoatMooringMarker.remove();
+        }
+
+        MarkerOptions options = new MarkerOptions();
+        options.position(new LatLng(boatMooring.getLatitude(), boatMooring.getLongitude()));
+        options.title(boatMooring.getName() + ", " + boatMooring.getType() + ", Boat Ramp");
+        options.snippet(boatMooring.getLocation());
+        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.mooring_icon1));
+
+        secondBoatMooringMarker = map.addMarker(options);
+    }
+
 
     @Override
     public void onClick(View view) {
