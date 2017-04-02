@@ -98,7 +98,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private Button navigationBtn;
     private PopupWindow popupWindow;
 
-
+    private List<Marker> markerList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -133,6 +133,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map_fragment);
         mapView = mapFragment.getView();
         mapFragment.getMapAsync(this);
+
+        markerList = new ArrayList<Marker>();
     }
 
     @Override
@@ -360,6 +362,14 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         addMarkerToMap(currentLatLng);
 
+        removeOtherMarkers(null, null);
+
+        for (Marker m : markerList) {
+            if (!m.isVisible()){
+                m.setVisible(true);
+            }
+        }
+
         return true;
     }
 
@@ -425,16 +435,19 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             case R.id.nav_police:
 
 //                searchPolice();
+                removeOtherMarkers(policeMarker, null);
                 zoomMapToFitMarker(policeMarker);
                 break;
             case R.id.nav_hospital:
 
 //                searchHospital();
+                removeOtherMarkers(hospitalMarker, null);
                 zoomMapToFitMarker(hospitalMarker);
                 break;
             case R.id.nav_boat_access:
 
 //                searchBoatAccess();
+                removeOtherMarkers(boatAccessMarker, secondBoatAccessMarker);
                 if (secondBoatAccessMarker != null) {
                     zoomMapToFitTwoMarkers(boatAccessMarker, secondBoatAccessMarker);
                 } else {
@@ -444,6 +457,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             case R.id.nav_boat_mooring:
 
 //                searchBoatMooring();
+                removeOtherMarkers(boatMooringMarker, secondBoatMooringMarker);
                 if (secondBoatMooringMarker != null) {
                     zoomMapToFitTwoMarkers(boatMooringMarker, secondBoatMooringMarker);
                 } else {
@@ -456,6 +470,21 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         }
         drawerLayout.closeDrawers();
         return true;
+    }
+
+    public void removeOtherMarkers(Marker marker1, Marker marker2){
+
+        for (Marker m : markerList) {
+            if (m == marker1) {
+                m.setVisible(true);
+                continue;
+            } else if (m == marker2) {
+                m.setVisible(true);
+                continue;
+            } else if (m != null) {
+                m.setVisible(false);
+            }
+        }
     }
 
     public void zoomMapToFitMarker(Marker marker){
@@ -620,6 +649,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         hospitalMarker = map.addMarker(options);
         hospitalMarker.setTag(hospital.getPhone());
+        markerList.add(hospitalMarker);
     }
 
     public void searchPolice(){
@@ -682,6 +712,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         policeMarker = map.addMarker(options);
         policeMarker.setTag(police.getPhoneNum());
+        markerList.add(policeMarker);
 
     }
 
@@ -755,6 +786,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         options.icon(BitmapDescriptorFactory.fromResource(R.drawable.boat_point_icon));
 
         boatAccessMarker = map.addMarker(options);
+        markerList.add(boatAccessMarker);
 
     }
 
@@ -771,6 +803,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         options.icon(BitmapDescriptorFactory.fromResource(R.drawable.boat_point_icon));
 
         secondBoatAccessMarker = map.addMarker(options);
+        markerList.add(secondBoatAccessMarker);
     }
 
     public void searchBoatMooring(){
@@ -841,6 +874,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         options.icon(BitmapDescriptorFactory.fromResource(R.drawable.mooring_icon1));
 
         boatMooringMarker = map.addMarker(options);
+        markerList.add(boatMooringMarker);
     }
 
     public void addSecondBoatMooringToMap(BoatMooring boatMooring){
@@ -856,6 +890,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         options.icon(BitmapDescriptorFactory.fromResource(R.drawable.mooring_icon1));
 
         secondBoatMooringMarker = map.addMarker(options);
+        markerList.add(secondBoatMooringMarker);
     }
 
 
