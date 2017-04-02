@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="180dp"
+    android:gravity="center_horizontal|center_vertical"
+    android:background="@color/colorPrimary">
+
+    <de.hdodenhof.circleimageview.CircleImageView
+        android:id="@+id/circle_image"
+        android:src="@drawable/fishing_boat"
+        android:layout_width="80dp"
+        android:layout_height="80dp" />
+    <TextView
+        android:paddingTop="10dp"
+        android:textColor="#ffffff"
+        android:text="Pick to Search"
+        android:textSize="15sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+</LinearLayout>

@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/main_screen_background"
+    tools:context="com.alavande.marineassistant.MainActivity">
+
+
+    <LinearLayout
+        android:id="@+id/activity_main"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:layout_marginRight="16dp"
+        android:layout_marginLeft="16dp"
+        android:paddingBottom="@dimen/activity_vertical_margin"
+        android:paddingTop="@dimen/activity_vertical_margin"
+        android:layout_alignParentBottom="true"
+        >
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center_horizontal|center_vertical">
+
+            <ImageButton
+                android:background="@drawable/map_icon"
+                android:id="@+id/emergency_btn"
+                android:layout_width="80dp"
+                android:layout_height="80dp"/>
+            <TextView
+                android:layout_marginTop="10dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Map"
+                android:textColor="@android:color/white"
+                android:textSize="15sp"
+                android:textStyle="bold"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center_horizontal|center_vertical">
+
+            <ImageButton
+                android:layout_width="80dp"
+                android:layout_height="80dp"
+                android:background="@drawable/weather_icon2"
+                android:id="@+id/weather_btn" />
+            <TextView
+                android:layout_marginTop="10dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Weather"
+                android:textColor="@android:color/white"
+                android:textSize="15sp"
+                android:textStyle="bold"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:orientation="vertical"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center_horizontal|center_vertical">
+
+            <Button
+                android:background="@drawable/plan_icon"
+                android:id="@+id/planner_btn"
+                android:layout_width="80dp"
+                android:layout_height="80dp"/>
+            <TextView
+                android:layout_marginTop="10dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Planner"
+                android:textColor="@android:color/white"
+                android:textSize="15sp"
+                android:textStyle="bold"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:paddingTop="50dp"
+        android:paddingRight="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"
+        android:weightSum="1">
+
+        <ImageView
+            android:background="@drawable/logo_icon5"
+            android:layout_width="191dp"
+            android:layout_height="61dp"/>
+    </LinearLayout>
+</RelativeLayout>

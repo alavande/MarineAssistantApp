@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="horizontal"
+    android:layout_width="match_parent"
+    android:layout_height="150dp"
+    android:gravity="center"
+    android:background="@android:color/holo_orange_light">
+
+    <LinearLayout
+        android:layout_marginTop="15dp"
+        android:orientation="vertical"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="5"
+        android:gravity="center_horizontal">
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_marginLeft="16dp"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:gravity="center">
+
+                <ImageView
+                    android:src="@drawable/start_point1"
+                    android:layout_width="25dp"
+                    android:layout_height="25dp" />
+            </LinearLayout>
+            <EditText
+                android:background="#29000000"
+                android:id="@+id/start_text"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="4"
+                android:text="start location"
+                android:textColor="@android:color/primary_text_dark_nodisable"/>
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_marginLeft="16dp"
+                android:layout_weight="1"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:gravity="center">
+
+                <ImageView
+                    android:src="@drawable/end_point"
+                    android:layout_width="30dp"
+                    android:layout_height="30dp"/>
+            </LinearLayout>
+            <EditText
+                android:background="#29000000"
+                android:id="@+id/end_text"
+                android:layout_width="0dp"
+                android:layout_height="40dp"
+                android:layout_weight="4"
+                android:text="end location"
+                android:textColor="@android:color/white"/>
+        </LinearLayout>
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:src="@drawable/arrow_line3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+</LinearLayout>

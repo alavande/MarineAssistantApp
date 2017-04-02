@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_police"
+            android:icon="@drawable/police_icon"
+            android:title="Police" />
+
+        <item
+            android:id="@+id/nav_hospital"
+            android:icon="@drawable/hospital_icon"
+            android:title="Hospital" />
+
+        <item
+            android:id="@+id/nav_boat_access"
+            android:icon="@drawable/boat_point_icon"
+            android:title="Boat Point" />
+
+        <item
+            android:id="@+id/nav_boat_facilities"
+            android:icon="@drawable/facilities_icon"
+            android:title="Boat Facilities" />
+
+    </group>
+</menu>
