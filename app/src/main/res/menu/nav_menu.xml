@@ -14,12 +14,12 @@
         <item
             android:id="@+id/nav_boat_access"
             android:icon="@drawable/boat_point_icon"
-            android:title="Boat Point" />
+            android:title="Boat Ramp" />
 
         <item
-            android:id="@+id/nav_boat_facilities"
-            android:icon="@drawable/facilities_icon"
-            android:title="Boat Facilities" />
+            android:id="@+id/nav_boat_mooring"
+            android:icon="@drawable/mooring_icon1"
+            android:title="Boat Mooring" />
 
     </group>
 </menu>
