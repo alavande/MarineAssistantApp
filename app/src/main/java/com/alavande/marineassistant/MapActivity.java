@@ -79,6 +79,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private GoogleMap map;
     private Marker marker, hospitalMarker, policeMarker, searchMarker,
             boatAccessMarker, boatMooringMarker, secondBoatAccessMarker, secondBoatMooringMarker;
+    private Marker searchHospitalMarker, searchPoliceMarker, searchBoatAccessMarker,
+            searchBoatMooringMarker, searchSecondBoatAccessMarker, searchSecondBoatMooringMarker;
     private GoogleApiClient client;
     private LocationRequest locationRequest;
     private View mapView;
@@ -200,8 +202,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         if (client != null) {
             LocationServices.FusedLocationApi.removeLocationUpdates(client, this);
         }
-
-
     }
 
 
@@ -299,7 +299,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     @Override
     public void onSuggestionClicked(SearchSuggestion searchSuggestion) {
 
-
     }
 
     @Override
@@ -329,21 +328,30 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         if (addresses.size() !=0) {
 
-            if (Integer.parseInt(addresses.get(0).getPostalCode()) < 3000 || Integer.parseInt(addresses.get(0).getPostalCode()) >= 4000){
-                Toast.makeText(this, "No result found, please check your key words.", Toast.LENGTH_SHORT).show();
-            } else {
-                Address address = addresses.get(0);
-                LatLng searchLatLng = new LatLng(address.getLatitude(), address.getLongitude());
-
-                MarkerOptions options = new MarkerOptions();
-                options.position(searchLatLng);
-
-                options.title(address.getAddressLine(0) + ", " + address.getLocality() + ", " + address.getPostalCode());
-                marker = map.addMarker(options);
-
-                map.animateCamera(CameraUpdateFactory.newLatLngZoom(searchLatLng, 17));
+            if (!addresses.get(0).getCountryCode().equals("AU")) {
+                Toast.makeText(this, "No result found or not in australia, please check your key words.", Toast.LENGTH_SHORT).show();
+                return;
             }
 
+            try{
+                if (Integer.parseInt(addresses.get(0).getPostalCode()) < 3000 || Integer.parseInt(addresses.get(0).getPostalCode()) >= 4000){
+                    Toast.makeText(this, "No result found, please check your key words.", Toast.LENGTH_SHORT).show();
+                } else {
+                    Address address = addresses.get(0);
+                    LatLng searchLatLng = new LatLng(address.getLatitude(), address.getLongitude());
+
+                    MarkerOptions options = new MarkerOptions();
+                    options.position(searchLatLng);
+
+                    options.title(address.getAddressLine(0) + ", " + address.getLocality() + ", " + address.getPostalCode());
+                    marker = map.addMarker(options);
+
+                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(searchLatLng, 17));
+//                    Toast.makeText(this, address.getCountryCode(), Toast.LENGTH_SHORT).show();
+                }
+            } catch (NumberFormatException e) {
+                Toast.makeText(this, "Number Format Exception", Toast.LENGTH_SHORT).show();
+            }
         }  else {
             Toast.makeText(this, "No result found, please check your key words.", Toast.LENGTH_SHORT).show();
         }
@@ -757,9 +765,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     public void run() {
 
                         if (nearestBoatAccess != null) {
-                            addNeareatBoatAccessToMap(nearestBoatAccess);
+                            addNearestBoatAccessToMap(nearestBoatAccess);
+                            markerList.add(boatAccessMarker);
                             if (secondBoatAccess != null) {
+//                                secondBoatAccessMarker = addBoatAccessToMap(secondBoatAccess);
                                 addSecondBoatAccessToMap(secondBoatAccess);
+//                                markerList.add(secondBoatAccessMarker);
                             }
                         } else {
                             Toast.makeText(context, "Nothing found.", Toast.LENGTH_SHORT).show();
@@ -771,13 +782,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         }).start();
     }
 
-    public void addNeareatBoatAccessToMap(BoatAccess boatAccess){
+    public void addNearestBoatAccessToMap(BoatAccess boatAccess){
 
         if (boatAccessMarker != null) {
             boatAccessMarker.remove();
         }
-
-
 
         MarkerOptions options = new MarkerOptions();
         options.position(new LatLng(boatAccess.getLatitude(), boatAccess.getLongitude()));
@@ -788,6 +797,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         boatAccessMarker = map.addMarker(options);
         markerList.add(boatAccessMarker);
 
+//        return map.addMarker(options);
     }
 
     public void addSecondBoatAccessToMap(BoatAccess boatAccess){
@@ -840,28 +850,24 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                         nearestBoatMooring = b;
                     }
                 }
-
                 handler.post(new Runnable() {
                     @Override
                     public void run() {
-
                         if (nearestBoatMooring != null) {
-                            addNeareatBoatMooringToMap(nearestBoatMooring);
+                            addNearestBoatMooringToMap(nearestBoatMooring);
                             if (secondBoatMooring != null){
                                 addSecondBoatMooringToMap(secondBoatMooring);
                             }
-
                         } else {
                             Toast.makeText(context, "Nothing found.", Toast.LENGTH_SHORT).show();
                         }
-
                     }
                 });
             }
         }).start();
     }
 
-    public void addNeareatBoatMooringToMap(BoatMooring boatMooring){
+    public void addNearestBoatMooringToMap(BoatMooring boatMooring){
 
         if (boatMooringMarker != null) {
             boatMooringMarker.remove();

@@ -141,10 +141,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             case R.id.planner_btn:
 
-//                intent.setClass(this, PlannerActivity.class);
-//                startActivity(intent);
+                intent.setClass(this, PlannerActivity.class);
+                startActivity(intent);
 
-                Toast.makeText(this, "In progress....", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(this, "In progress....", Toast.LENGTH_SHORT).show();
                 break;
             default:
                 break;

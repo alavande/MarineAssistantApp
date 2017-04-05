@@ -27,7 +27,6 @@ public class WeatherActivity extends AppCompatActivity {
     private TextView windspeed;
     private TextView weatherInfo;
     private ImageView weatherpic;
-    private Button button_1;
     private static final int weather = 1;
     private static final int sendtide = 1;
     private static final int Wind = 1;
@@ -82,7 +81,6 @@ public class WeatherActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.weather_layout);
-        button_1 = (Button) findViewById(R.id.button_1);
         tideInfo = (TextView) findViewById(R.id.tideInfo);
         tide = (TextView) findViewById(R.id.tide);
         windspeed = (TextView) findViewById(R.id.windspeed);
