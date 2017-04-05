@@ -1,29 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
-    android:layout_width="wrap_content"
-    android:layout_height="240dp"
-    android:layout_marginRight="10dp"
-    android:background="@drawable/note_background">
+    android:id="@+id/item_layout"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="5dp"
+    android:background="@drawable/solid">
 
     <LinearLayout
-        android:layout_marginTop="10dp"
-        android:layout_marginLeft="30dp"
-        android:layout_marginRight="15dp"
+        android:id="@+id/container_item"
+        android:layout_marginTop="15dp"
         android:orientation="vertical"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="10dp"
+        android:layout_marginBottom="5dp">
     <TextView
-        android:layout_marginTop="10dp"
         android:id="@+id/note_title"
         android:layout_width="match_parent"
-        android:layout_height="20dp"
+        android:layout_height="25dp"
         android:hint="Title"
         android:textStyle="bold"
-        android:textSize="18sp"/>
+        android:textSize="18sp"
+        android:textColor="@color/black"/>
 
     <TextView
+        android:lineSpacingMultiplier="1.3"
         android:layout_marginTop="10dp"
         android:id="@+id/note_body"
         android:layout_width="match_parent"
@@ -31,14 +34,28 @@
         android:hint="Content"
         android:textSize="15sp"/>
 
+    </LinearLayout>
+
     <TextView
+        android:layout_below="@id/container_item"
+        android:layout_gravity="bottom|end"
+        android:layout_marginBottom="7dp"
         android:gravity="end"
         android:id="@+id/note_time"
         android:paddingTop="10dp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textSize="10sp"
-        android:textColor="#000000"
+        android:layout_marginRight="10dp"
+        android:textSize="12sp"
         android:hint="time" />
-    </LinearLayout>
-</LinearLayout>
+
+    <ImageView
+        android:layout_marginTop="5dp"
+        android:layout_marginLeft="15dp"
+        android:layout_below="@id/container_item"
+        android:gravity="end|start"
+        android:id="@+id/item_delete_img"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@drawable/item_delete_icon"/>
+</RelativeLayout>

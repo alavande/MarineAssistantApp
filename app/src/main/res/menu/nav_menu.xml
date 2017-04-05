@@ -12,14 +12,19 @@
             android:title="Hospital" />
 
         <item
-            android:id="@+id/nav_boat_access"
-            android:icon="@drawable/boat_point_icon"
-            android:title="Boat Ramp" />
+            android:title="Boat Facilities">
+            <menu>
+                <item
+                    android:id="@+id/nav_boat_access"
+                    android:icon="@drawable/boat_point_icon"
+                    android:title="Boat Ramp" />
 
-        <item
-            android:id="@+id/nav_boat_mooring"
-            android:icon="@drawable/mooring_icon1"
-            android:title="Boat Mooring" />
+                <item
+                    android:id="@+id/nav_boat_mooring"
+                    android:icon="@drawable/mooring_icon1"
+                    android:title="Boat Mooring" />
+            </menu>
+        </item>
 
     </group>
 </menu>

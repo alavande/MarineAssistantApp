@@ -2,32 +2,23 @@
 <RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/bg">
+    android:layout_height="match_parent">
 
-    <Button android:id="@+id/button_1"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="Weather"
-        android:layout_alignParentTop="true"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true" />
     <ImageView
         android:id="@+id/weatherpic"
         android:layout_width="186dp"
         android:layout_height="166dp"
-        android:src="@drawable/cloud"
+        android:src="@drawable/cloudy_img"
         android:layout_marginTop="20dp"
-        android:layout_below="@+id/button_1"
         android:layout_toLeftOf="@+id/weatherInfo"
         android:layout_toStartOf="@+id/weatherInfo" />
     <TextView
         android:id="@+id/weatherInfo"
         android:layout_width="178dp"
         android:layout_height="163dp"
-        android:text="Max \n  Min "
+        android:text="Max\nMin "
         android:textSize="24sp"
-        android:gravity="center"
+        android:gravity="center_vertical"
         android:layout_alignTop="@+id/weatherpic"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true" />
