@@ -5,6 +5,8 @@ import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.View;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -21,6 +23,8 @@ import okhttp3.Response;
 
 public class WeatherActivity extends AppCompatActivity {
 
+    private WebView weatherView;
+
     private TextView windspeedInfo;
     private TextView tideInfo;
     private TextView tide;
@@ -30,6 +34,7 @@ public class WeatherActivity extends AppCompatActivity {
     private static final int weather = 1;
     private static final int sendtide = 1;
     private static final int Wind = 1;
+
     Handler handler1 = new Handler() {
 
         // 处理子线程给我们发送的消息。
@@ -81,6 +86,10 @@ public class WeatherActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.weather_layout);
+//        setContentView(R.layout.weather_layout_webview);
+//        weatherView = (WebView) findViewById(R.id.weather_webview);
+//        String url = "http://www.bom.gov.au/marine/index.shtml";
+//        weatherView.loadUrl(url);
         tideInfo = (TextView) findViewById(R.id.tideInfo);
         tide = (TextView) findViewById(R.id.tide);
         windspeed = (TextView) findViewById(R.id.windspeed);

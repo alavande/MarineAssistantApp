@@ -1,8 +1,12 @@
 package com.alavande.marineassistant;
 
 import android.*;
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.ValueAnimator;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -12,6 +16,7 @@ import android.location.Location;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.BottomSheetBehavior;
 import android.support.design.widget.CoordinatorLayout;
@@ -25,11 +30,15 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AutoCompleteTextView;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
@@ -38,9 +47,18 @@ import android.widget.Toast;
 
 import com.arlib.floatingsearchview.FloatingSearchView;
 import com.arlib.floatingsearchview.suggestions.model.SearchSuggestion;
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.GooglePlayServicesNotAvailableException;
+import com.google.android.gms.common.GooglePlayServicesRepairableException;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.common.api.PendingResult;
+import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.location.places.Place;
+import com.google.android.gms.location.places.PlaceBuffer;
+import com.google.android.gms.location.places.Places;
+import com.google.android.gms.location.places.ui.PlaceAutocomplete;
 import com.google.android.gms.maps.CameraUpdate;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -55,8 +73,16 @@ import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.android.SphericalUtil;
 
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -64,16 +90,19 @@ import java.util.Map;
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
         com.google.android.gms.location.LocationListener, FloatingSearchView.OnSearchListener,
         GoogleMap.OnMyLocationButtonClickListener, NavigationView.OnNavigationItemSelectedListener,
-        GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener, View.OnClickListener {
+        GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener, View.OnClickListener,
+        GoogleApiClient.OnConnectionFailedListener{
 
     private DrawerLayout drawerLayout;
-    private CoordinatorLayout coordinator;
+    private RelativeLayout popupWindow;
     private NavigationView navigationView;
     private LinearLayout llBottomSheet;
 
     private BottomSheetBehavior bottomSheetBehavior;
+    private AutoCompleteTextView startPoint, endPoint;
 
     private Polyline polyline;
+    private PolylineOptions polylineOptions;
 
     private MapFragment mapFragment;
     private GoogleMap map;
@@ -81,10 +110,13 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             boatAccessMarker, boatMooringMarker, secondBoatAccessMarker, secondBoatMooringMarker;
     private Marker searchHospitalMarker, searchPoliceMarker, searchBoatAccessMarker,
             searchBoatMooringMarker, searchSecondBoatAccessMarker, searchSecondBoatMooringMarker;
+    private Marker startMarker, endMarker;
+
     private GoogleApiClient client;
     private LocationRequest locationRequest;
     private View mapView;
     private LatLng currentLatLng;
+    private PlaceAutocompleteAdapter autocompleteAdapter;
 
     private FloatingSearchView searchView;
 
@@ -97,10 +129,14 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private BoatMooring nearestBoatMooring, secondBoatMooring;
 
     private TextView bottomTitle, bottomContent, phoneText, loccationText;
-    private Button navigationBtn;
-    private PopupWindow popupWindow;
+    private AutoCompleteTextView autoCompleteTextView;
+    private Button navigationBtn, startNavigationBtn;
 
     private List<Marker> markerList;
+
+    private static final LatLngBounds BOUNDS_GREATER_VICTORIA = new LatLngBounds(
+            new LatLng(-38.055358, 140.966645),
+            new LatLng(-37.502666, 149.878801));
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -110,13 +146,22 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         context = this;
         handler = new Handler();
 
-        coordinator = (CoordinatorLayout) findViewById(R.id.coordinator);
+        popupWindow = (RelativeLayout) findViewById(R.id.popup_window);
+        popupWindow.setVisibility(View.GONE);
+
+        startPoint = (AutoCompleteTextView) findViewById(R.id.start_text);
+        startPoint.setOnItemClickListener(startPointClickListener);
+        endPoint = (AutoCompleteTextView) findViewById(R.id.end_text);
+        endPoint.setOnItemClickListener(endPointClickListener);
+
         llBottomSheet = (LinearLayout) findViewById(R.id.bottom_sheet);
         bottomSheetBehavior = BottomSheetBehavior.from(llBottomSheet);
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
 
         navigationBtn = (Button) findViewById(R.id.navigation_btn);
         navigationBtn.setOnClickListener(this);
+        startNavigationBtn = (Button) findViewById(R.id.start_navigation_btn);
+        startNavigationBtn.setOnClickListener(this);
 
         bottomTitle = (TextView) findViewById(R.id.map_info_title_text);
         bottomContent = (TextView) findViewById(R.id.map_info_content_text);
@@ -132,11 +177,22 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         searchView.attachNavigationDrawerToMenuButton(drawerLayout);
         searchView.setOnSearchListener(this);
 
+        autoCompleteTextView = (AutoCompleteTextView) findViewById(R.id.autocomplete_search_text);
+        autoCompleteTextView.setCursorVisible(false);
+        autoCompleteTextView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                autoCompleteTextView.setCursorVisible(true);
+            }
+        });
+        autoCompleteTextView.setOnItemClickListener(mAutocompleteClickListener);
+
         mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map_fragment);
         mapView = mapFragment.getView();
         mapFragment.getMapAsync(this);
 
         markerList = new ArrayList<Marker>();
+
     }
 
     @Override
@@ -170,10 +226,17 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     public void buildGoogleApiClient(){
         client = new GoogleApiClient.Builder(this)
+                .enableAutoManage(this, 0, this)
                 .addConnectionCallbacks(this)
                 .addApi(LocationServices.API)
+                .addApi(Places.GEO_DATA_API)
+                .addApi(Places.PLACE_DETECTION_API)
                 .build();
-        client.connect();
+        autocompleteAdapter = new PlaceAutocompleteAdapter(this, android.R.layout.simple_list_item_1,
+                client, BOUNDS_GREATER_VICTORIA, null);
+        autoCompleteTextView.setAdapter(autocompleteAdapter);
+        startPoint.setAdapter(autocompleteAdapter);
+        endPoint.setAdapter(autocompleteAdapter);
     }
 
     @Override
@@ -197,7 +260,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
         }).start();
 
-        map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17));
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17));
 
         if (client != null) {
             LocationServices.FusedLocationApi.removeLocationUpdates(client, this);
@@ -304,67 +367,76 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     @Override
     public void onSearchAction(String currentQuery) {
 
-        searchOnMap(currentQuery);
-        LatLng latLng = marker.getPosition();
-        searchHospitalAtOtherPlace(latLng);
-        searchPoliceAtOtherPlace(latLng);
-        searchBoatAccessAtOtherPlace(latLng);
-        searchBoatMooringAtOtherPlace(latLng);
-        removeOtherMarkers(null, null);
-        zoomMapToFitMarkers(latLng, searchHospitalMarker, searchPoliceMarker,
-                searchBoatAccessMarker, searchSecondBoatAccessMarker,
-                searchBoatMooringMarker, searchSecondBoatMooringMarker);
+//        boolean result = searchOnMap(currentQuery);
+//        if (!result) {
+//            return;
+//        }
+//        LatLng latLng = marker.getPosition();
+//        searchHospitalAtOtherPlace(latLng);
+//        searchPoliceAtOtherPlace(latLng);
+//        searchBoatAccessAtOtherPlace(latLng);
+//        searchBoatMooringAtOtherPlace(latLng);
+//        removeOtherMarkers(null, null);
+//        zoomMapToFitMarkers(latLng, searchHospitalMarker, searchPoliceMarker,
+//                searchBoatAccessMarker, searchSecondBoatAccessMarker,
+//                searchBoatMooringMarker, searchSecondBoatMooringMarker);
     }
 
-    public void searchOnMap(String keyWord){
-        if (marker != null) {
-            marker.remove();
-        }
-
-        if (polyline != null) {
-            polyline.remove();
-        }
-
-        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
-
-        List<Address> addresses = null;
-
-        try {
-            addresses = geocoder.getFromLocationName(keyWord + "Victoria, Australia", 1);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        if (addresses.size() !=0) {
-
-            if (!addresses.get(0).getCountryCode().equals("AU")) {
-                Toast.makeText(this, "No result found or not in australia, please check your key words.", Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            try{
-                if (Integer.parseInt(addresses.get(0).getPostalCode()) < 3000 || Integer.parseInt(addresses.get(0).getPostalCode()) >= 4000){
-                    Toast.makeText(this, "No result found, please check your key words.", Toast.LENGTH_SHORT).show();
-                } else {
-                    Address address = addresses.get(0);
-                    LatLng searchLatLng = new LatLng(address.getLatitude(), address.getLongitude());
-
-                    MarkerOptions options = new MarkerOptions();
-                    options.position(searchLatLng);
-
-                    options.title(address.getAddressLine(0) + ", " + address.getLocality() + ", " + address.getPostalCode());
-                    marker = map.addMarker(options);
-
-                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(searchLatLng, 17));
-//                    Toast.makeText(this, address.getCountryCode(), Toast.LENGTH_SHORT).show();
-                }
-            } catch (NumberFormatException e) {
-                Toast.makeText(this, "Number Format Exception", Toast.LENGTH_SHORT).show();
-            }
-        }  else {
-            Toast.makeText(this, "No result found, please check your key words.", Toast.LENGTH_SHORT).show();
-        }
-    }
+//    public boolean searchOnMap(String keyWord){
+//
+//        if (polyline != null) {
+//            polyline.remove();
+//        }
+//
+//        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+//
+//        List<Address> addresses = null;
+//
+//        try {
+//            addresses = geocoder.getFromLocationName(keyWord, 1);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//
+//        if (addresses.size() !=0) {
+//
+//            if (addresses.get(0).getCountryCode() == null) {
+//                Toast.makeText(this, "No result found or not in australia, please check your key words.", Toast.LENGTH_SHORT).show();
+//                return false;
+//            }
+//
+//            if (!addresses.get(0).getCountryCode().equals("AU")) {
+//                Toast.makeText(this, "No result found or not in australia, please check your key words.", Toast.LENGTH_SHORT).show();
+//                return false;
+//            }
+//
+//            try{
+//                if (Integer.parseInt(addresses.get(0).getPostalCode()) < 3000 || Integer.parseInt(addresses.get(0).getPostalCode()) >= 4000){
+//                    Toast.makeText(this, "No result found, please check your key words.", Toast.LENGTH_SHORT).show();
+//                } else {
+//                    Address address = addresses.get(0);
+//                    LatLng searchLatLng = new LatLng(address.getLatitude(), address.getLongitude());
+//
+//                    MarkerOptions options = new MarkerOptions();
+//                    options.position(searchLatLng);
+//
+//                    options.title(address.getAddressLine(0) + ", " + address.getLocality() + ", " + address.getPostalCode());
+//                    marker = map.addMarker(options);
+//
+//                    map.animateCamera(CameraUpdateFactory.newLatLngZoom(searchLatLng, 17));
+////                    Toast.makeText(this, address.getCountryCode(), Toast.LENGTH_SHORT).show();
+//                }
+//            } catch (NumberFormatException e) {
+//                Toast.makeText(this, "Number Format Exception", Toast.LENGTH_SHORT).show();
+//                return false;
+//            }
+//        }  else {
+//            Toast.makeText(this, "No result found, please check your key words.", Toast.LENGTH_SHORT).show();
+//            return false;
+//        }
+//
+//        return true;
+//    }
 
     @Override
     public boolean onMyLocationButtonClick() {
@@ -377,45 +449,37 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             polyline.remove();
         }
 
-        removeSearchMarkers();
+        if (searchMarker != null) {
+            searchMarker.remove();
+        }
 
-        addMarkerToMap(currentLatLng);
+        if (startMarker != null) {
+            startMarker.remove();
+        }
+
+        if (endMarker != null) {
+            endMarker.remove();
+        }
 
         removeOtherMarkers(null, null);
+        removeSearchMarkers();
+        new AsyncTask<LatLng, Void, MarkerOptions>(){
+            @Override
+            protected MarkerOptions doInBackground(LatLng... latLngs) {
 
-        for (Marker m : markerList) {
-            if (!m.isVisible()){
-                m.setVisible(true);
-            }
-        }
-
-        return true;
-    }
-
-    public void addMarkerToMap(LatLng addLatLng){
-
-        if (marker != null) {
-            marker.remove();
-        }
-
-//        new AsyncTask<LatLng, Void, MarkerOptions>() {
-//            @Override
-//            protected MarkerOptions doInBackground(LatLng... latLngs) {
-//
-//                LatLng latLng = latLngs[0];
                 Geocoder geocoder = new Geocoder(MapActivity.this, Locale.getDefault());
 
                 List<Address> addresses = null;
                 String address, city, state, country, postalCode;
 
                 try {
-                    addresses = geocoder.getFromLocation(addLatLng.latitude, addLatLng.longitude, 1);
+                    addresses = geocoder.getFromLocation(latLngs[0].latitude, latLngs[0].longitude, 1);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
 
                 MarkerOptions markerOptions = new MarkerOptions();
-                markerOptions.position(addLatLng);
+                markerOptions.position(currentLatLng);
 
                 if (addresses != null) {
 
@@ -433,20 +497,92 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     markerOptions.title("Current Position");
                     markerOptions.snippet("No detail provided");
                 }
-//                return markerOptions;
-//            }
-//
-//            @Override
-//            protected void onPostExecute(MarkerOptions markerOptions) {
-//                super.onPostExecute(markerOptions);
+
+                return markerOptions;
+            }
+
+            @Override
+            protected void onPostExecute(MarkerOptions options) {
+                marker = map.addMarker(options);
+                for (Marker m : markerList) {
+                    if (!m.isVisible()){
+                        m.setVisible(true);
+                    }
+                }
+
+            }
+        }.execute(currentLatLng);
+
+        map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17));
+        return true;
+    }
+
+    public void addMarkerToMap(final LatLng addLatLng){
+
+        if (marker != null) {
+            marker.remove();
+        }
+
+        if (searchMarker != null) {
+            searchMarker.remove();
+        }
+
+        new AsyncTask<LatLng, Void, MarkerOptions>() {
+            @Override
+            protected MarkerOptions doInBackground(LatLng... latLngs) {
+
+                LatLng latLng = latLngs[0];
+                Geocoder geocoder = new Geocoder(MapActivity.this, Locale.getDefault());
+
+                List<Address> addresses = null;
+                String address, city, state, country, postalCode;
+
+                try {
+                    addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                MarkerOptions markerOptions = new MarkerOptions();
+                markerOptions.position(latLng);
+
+                if (addresses != null) {
+
+                    Address site = addresses.get(0);
+
+                    address = site.getAddressLine(0);
+                    city = site.getLocality();
+                    state = site.getAdminArea();
+                    country = site.getCountryName();
+                    postalCode = site.getPostalCode();
+
+                    markerOptions.title(address + ", " + city + ", " + postalCode);
+                    markerOptions.snippet( state + ", " + country);
+                } else {
+                    markerOptions.title("Current Position");
+                    markerOptions.snippet("No detail provided");
+                }
+                return markerOptions;
+            }
+
+            @Override
+            protected void onPostExecute(MarkerOptions markerOptions) {
+                super.onPostExecute(markerOptions);
                 marker = map.addMarker(markerOptions);
-                map.moveCamera(CameraUpdateFactory.newLatLngZoom(markerOptions.getPosition(), 17));
-//            }
-//        }.execute(addLatLng);
+                if (searchHospitalMarker != null && searchPoliceMarker != null) {
+                    zoomMapToFitMarkers(markerOptions.getPosition(), searchHospitalMarker, searchPoliceMarker,
+                            searchBoatAccessMarker, searchSecondBoatAccessMarker, searchBoatMooringMarker, searchSecondBoatMooringMarker);
+                } else {
+
+                }
+            }
+        }.execute(addLatLng);
     }
 
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
+
+        removeSearchMarkers();
 
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
 
@@ -540,8 +676,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         LatLngBounds.Builder builder = new LatLngBounds.Builder();
         builder.include(currentLatLng);
-        builder.include(marker.getPosition());
-
+        if (marker != null) {
+            builder.include(marker.getPosition());
+        }
         LatLngBounds bounds = builder.build();
 
         int padding = 200;
@@ -583,6 +720,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     @Override
     public void onMapClick(LatLng latLng) {
 
+        animClose(popupWindow);
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
     }
 
@@ -607,14 +745,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     @Override
     public boolean onMarkerClick(Marker marker) {
 
-        searchMarker = marker;
+        if (!searchMarker.getTitle().equals(marker.getTitle())) {
+            searchMarker.setVisible(false);
+        }
 
         if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED){
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
         } else {
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
         }
-
 
         bottomTitle.setText(marker.getTitle());
         bottomContent.setText(marker.getSnippet());
@@ -623,6 +762,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             phoneText.setText(marker.getTag().toString());
         } else {
             phoneText.setText("No Phone Number Available.");
+        }
+
+        if (startPoint.isFocused()) {
+            startPoint.setText("    " + marker.getTitle());
+            startMarker = marker;
+        }
+        if (endPoint.isFocused() || (!endPoint.isFocused() && !startPoint.isFocused())) {
+            endPoint.setText("    " + marker.getTitle());
+            endMarker = marker;
         }
 
         return true;
@@ -1256,11 +1404,461 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         switch (view.getId()) {
             case R.id.navigation_btn:
 
+                if (searchMarker == null) {
+                    Toast.makeText(this, "Please find your destination.", Toast.LENGTH_SHORT).show();
+                    return;
+                }
+                animOpen(popupWindow);
+                if (startMarker == null) {
+                    startPoint.setText("    Current Location");
+                    startMarker = marker;
+                } else {
+                    startPoint.setText("    " + startMarker.getTitle());
+                }
+
+                endPoint.setText("    " + searchMarker.getTitle());
+
+                navigationBtn.setVisibility(View.GONE);
+                endMarker = searchMarker;
 //                findRoute();
-                Toast.makeText(this, "In progress...", Toast.LENGTH_SHORT).show();
+//                Toast.makeText(this, "In progress...", Toast.LENGTH_SHORT).show();
                 break;
+            case R.id.start_navigation_btn:
+
+                if (polyline != null) {
+                    polyline.remove();
+                }
+
+                if (searchMarker == null) {
+                    Toast.makeText(this, "Your are here now.", Toast.LENGTH_SHORT).show();
+                }
+
+                if (startPoint.getText().equals("    Current Location")) {
+                    startMarker = marker;
+                }
+
+                routeDrawer(startMarker.getPosition(), endMarker.getPosition());
+                zoomMapToFitTwoMarkers(startMarker, endMarker);
+                double distance = SphericalUtil.computeDistanceBetween(startMarker.getPosition(), endMarker.getPosition());
+                double time = (distance / 1000) / 40;
+                int hour = (int) time;
+                int minus = (int) ((time - hour) * 60);
+                Log.i("time", hour + "hour, " + minus + "minus");
+                Toast.makeText(this, "Estimate time: " + hour + " hour, " + minus + " minus", Toast.LENGTH_SHORT).show();
+
+                navigationBtn.setVisibility(View.VISIBLE);
+                animClose(popupWindow);
+                bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
             default:
                 break;
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+
+        if (drawerLayout.isDrawerOpen(navigationView)){
+            drawerLayout.closeDrawers();
+        } else {
+            super.onBackPressed();
+        }
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+
+    private AdapterView.OnItemClickListener mAutocompleteClickListener
+            = new AdapterView.OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            /*
+             Retrieve the place ID of the selected item from the Adapter.
+             The adapter stores each Place suggestion in a PlaceAutocomplete object from which we
+             read the place ID.
+              */
+            final PlaceAutocompleteAdapter.PlaceAutocomplete item = autocompleteAdapter.getItem(position);
+            final String placeId = String.valueOf(item.placeId);
+            Log.i("1", "Autocomplete item selected: " + item.description);
+            if (polyline != null) {
+                polyline.remove();
+            }
+            /*
+             Issue a request to the Places Geo Data API to retrieve a Place object with additional
+              details about the place.
+              */
+            PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi
+                    .getPlaceById(client, placeId);
+            placeResult.setResultCallback(mUpdatePlaceDetailsCallback);
+            Log.i("2", "Called getPlaceById to get Place details for " + item.placeId);
+
+        }
+    };
+
+    private ResultCallback<PlaceBuffer> mUpdatePlaceDetailsCallback
+            = new ResultCallback<PlaceBuffer>() {
+        @Override
+        public void onResult(PlaceBuffer places) {
+            if (!places.getStatus().isSuccess()) {
+                // Request did not complete successfully
+                Log.e("3", "Place query did not complete. Error: " + places.getStatus().toString());
+                places.release();
+                return;
+            }
+            // Get the Place object from the buffer.
+            final Place place = places.get(0);
+
+            // Format details of the place for display and show it in a TextView.
+            Log.i("result", place.getAddress() + "");
+
+            if (!place.getLocale().getCountry().toString().equals("AU")) {
+                Toast.makeText(context, "Not in Australia", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+            // Display the third party attributions if set.
+            if (marker != null) {
+                marker.remove();
+            }
+
+            if (searchMarker != null) {
+                searchMarker.remove();
+            }
+
+            MarkerOptions options = new MarkerOptions();
+            options.position(place.getLatLng());
+
+            options.title(place.getName().toString());
+            options.snippet(place.getAddress().toString());
+            searchMarker = map.addMarker(options);
+            if (place.getPhoneNumber().toString().length() != 0){
+                searchMarker.setTag(place.getPhoneNumber());
+            }
+
+            LatLng latLng = searchMarker.getPosition();
+            searchHospitalAtOtherPlace(latLng);
+            searchPoliceAtOtherPlace(latLng);
+            searchBoatAccessAtOtherPlace(latLng);
+            searchBoatMooringAtOtherPlace(latLng);
+            removeOtherMarkers(null, null);
+            zoomMapToFitMarkers(latLng, searchHospitalMarker, searchPoliceMarker,
+                    searchBoatAccessMarker, searchSecondBoatAccessMarker,
+                    searchBoatMooringMarker, searchSecondBoatMooringMarker);
+
+            autoCompleteTextView.setText("");
+            autoCompleteTextView.setCursorVisible(false);
+            Log.i("4", "Place details received: " + place.getName());
+
+            places.release();
+        }
+    };
+
+    private AdapterView.OnItemClickListener startPointClickListener
+            = new AdapterView.OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            /*
+             Retrieve the place ID of the selected item from the Adapter.
+             The adapter stores each Place suggestion in a PlaceAutocomplete object from which we
+             read the place ID.
+              */
+            final PlaceAutocompleteAdapter.PlaceAutocomplete item = autocompleteAdapter.getItem(position);
+            final String placeId = String.valueOf(item.placeId);
+            Log.i("1", "Autocomplete item selected: " + item.description);
+
+            /*
+             Issue a request to the Places Geo Data API to retrieve a Place object with additional
+              details about the place.
+              */
+            PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi
+                    .getPlaceById(client, placeId);
+            placeResult.setResultCallback(startPointUpdatePlaceDetailsCallback);
+            Log.i("2", "Called getPlaceById to get Place details for " + item.placeId);
+
+        }
+    };
+
+    private ResultCallback<PlaceBuffer> startPointUpdatePlaceDetailsCallback
+            = new ResultCallback<PlaceBuffer>() {
+        @Override
+        public void onResult(PlaceBuffer places) {
+            if (!places.getStatus().isSuccess()) {
+                // Request did not complete successfully
+                Log.e("3", "Place query did not complete. Error: " + places.getStatus().toString());
+                places.release();
+                return;
+            }
+            // Get the Place object from the buffer.
+            final Place place = places.get(0);
+
+            // Format details of the place for display and show it in a TextView.
+            Log.i("result", place.getAddress() + "");
+
+            if (!place.getLocale().getCountry().toString().equals("AU")) {
+                Toast.makeText(context, "Not in Australia", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Display the third party attributions if set.
+            if (startMarker != null) {
+                startMarker.remove();
+            }
+            MarkerOptions options = new MarkerOptions();
+            options.position(place.getLatLng());
+
+            options.title(place.getName().toString());
+            options.snippet(place.getAddress().toString());
+
+            startMarker = map.addMarker(options);
+            if (place.getPhoneNumber().toString().length() != 0){
+                startMarker.setTag(place.getPhoneNumber());
+            }
+
+            Log.i("4", "Place details received: " + place.getName());
+
+            places.release();
+        }
+    };
+
+    private AdapterView.OnItemClickListener endPointClickListener
+            = new AdapterView.OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            /*
+             Retrieve the place ID of the selected item from the Adapter.
+             The adapter stores each Place suggestion in a PlaceAutocomplete object from which we
+             read the place ID.
+              */
+            final PlaceAutocompleteAdapter.PlaceAutocomplete item = autocompleteAdapter.getItem(position);
+            final String placeId = String.valueOf(item.placeId);
+            Log.i("1", "Autocomplete item selected: " + item.description);
+
+            /*
+             Issue a request to the Places Geo Data API to retrieve a Place object with additional
+              details about the place.
+              */
+            PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi
+                    .getPlaceById(client, placeId);
+            placeResult.setResultCallback(endPointUpdatePlaceDetailsCallback);
+            Log.i("2", "Called getPlaceById to get Place details for " + item.placeId);
+
+        }
+    };
+
+    private ResultCallback<PlaceBuffer> endPointUpdatePlaceDetailsCallback
+            = new ResultCallback<PlaceBuffer>() {
+        @Override
+        public void onResult(PlaceBuffer places) {
+            if (!places.getStatus().isSuccess()) {
+                // Request did not complete successfully
+                Log.e("3", "Place query did not complete. Error: " + places.getStatus().toString());
+                places.release();
+                return;
+            }
+            // Get the Place object from the buffer.
+            final Place place = places.get(0);
+
+            // Format details of the place for display and show it in a TextView.
+            Log.i("result", place.getAddress() + "");
+
+            if (!place.getLocale().getCountry().toString().equals("AU")) {
+                Toast.makeText(context, "Not in Australia", Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            // Display the third party attributions if set.
+            if (endMarker != null){
+                endMarker.remove();
+            }
+            MarkerOptions options = new MarkerOptions();
+            options.position(place.getLatLng());
+
+            options.title(place.getName().toString());
+            options.snippet(place.getAddress().toString());
+
+            endMarker = map.addMarker(options);
+            if (place.getPhoneNumber().toString().length() != 0){
+                endMarker.setTag(place.getPhoneNumber());
+            }
+
+            Log.i("4", "Place details received: " + place.getName());
+
+            places.release();
+        }
+    };
+
+    private void animOpen(final  View view){
+        view.setVisibility(View.VISIBLE);
+        ValueAnimator va = createDropAnim(view,0,500);
+        va.start();
+    }
+
+    private void animClose(final  View view){
+        int origHeight = view.getHeight();
+        ValueAnimator va = createDropAnim(view,origHeight,0);
+        va.addListener(new AnimatorListenerAdapter() {
+            @Override
+            public void onAnimationEnd(Animator animation) {
+                view.setVisibility(View.GONE);
+            }
+        });
+        va.start();
+    }
+
+    private ValueAnimator createDropAnim(final  View view, int start, int end) {
+        ValueAnimator va = ValueAnimator.ofInt(start, end);
+        va.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(ValueAnimator animation) {
+                int value = (int) animation.getAnimatedValue();
+                ViewGroup.LayoutParams layoutParams = view.getLayoutParams();
+                layoutParams.height = value;
+                view.setLayoutParams(layoutParams);
+            }
+        });
+        return  va;
+    }
+
+    private String downloadUrl(String strUrl) throws IOException {
+        String data = "";
+        InputStream iStream = null;
+        HttpURLConnection urlConnection = null;
+        try{
+            URL url = new URL(strUrl);
+
+            // Creating an http connection to communicate with url
+            urlConnection = (HttpURLConnection) url.openConnection();
+
+            // Connecting to url
+            urlConnection.connect();
+
+            // Reading data from url
+            iStream = urlConnection.getInputStream();
+
+            BufferedReader br = new BufferedReader(new InputStreamReader(iStream));
+
+            StringBuffer sb = new StringBuffer();
+
+            String line = "";
+            while( ( line = br.readLine()) != null){
+                sb.append(line);
+            }
+
+            data = sb.toString();
+
+            br.close();
+
+        }catch(Exception e){
+            Log.d("downloading url", e.toString());
+        }finally{
+            iStream.close();
+            urlConnection.disconnect();
+        }
+        return data;
+    }
+
+    // Fetches data from url passed
+    private class DownloadTask extends AsyncTask<String, Void, String> {
+
+        // Downloading data in non-ui thread
+        @Override
+        protected String doInBackground(String... url) {
+
+            // For storing data from web service
+            String data = "";
+
+            try{
+                // Fetching the data from web service
+                data = downloadUrl(url[0]);
+            }catch(Exception e){
+                Log.d("Background Task",e.toString());
+            }
+            return data;
+        }
+
+        // Executes in UI thread, after the execution of
+        // doInBackground()
+        @Override
+        protected void onPostExecute(String result) {
+            super.onPostExecute(result);
+
+            ParserTask parserTask = new ParserTask();
+
+            // Invokes the thread for parsing the JSON data
+            parserTask.execute(result);
+        }
+    }
+
+    /** A class to parse the Google Places in JSON format */
+    private class ParserTask extends AsyncTask<String, Integer, List<List<HashMap<String,String>>> >{
+
+        // Parsing the data in non-ui thread
+        @Override
+        protected List<List<HashMap<String, String>>> doInBackground(String... jsonData) {
+
+            JSONObject jObject;
+            List<List<HashMap<String, String>>> routes = null;
+
+            try{
+                jObject = new JSONObject(jsonData[0]);
+                DirectionsJSONParser parser = new DirectionsJSONParser();
+
+                // Starts parsing data
+                routes = parser.parse(jObject);
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+            return routes;
+        }
+
+        // Executes in UI thread, after the parsing process
+        @Override
+        protected void onPostExecute(List<List<HashMap<String, String>>> result) {
+            ArrayList<LatLng> points = null;
+            PolylineOptions lineOptions = null;
+            MarkerOptions markerOptions = new MarkerOptions();
+
+            // Traversing through all the routes
+            for(int i=0;i<result.size();i++){
+                points = new ArrayList<LatLng>();
+                lineOptions = new PolylineOptions();
+
+                // Fetching i-th route
+                List<HashMap<String, String>> path = result.get(i);
+
+                // Fetching all the points in i-th route
+                for(int j=0;j<path.size();j++){
+                    HashMap<String,String> point = path.get(j);
+
+                    double lat = Double.parseDouble(point.get("lat"));
+                    double lng = Double.parseDouble(point.get("lng"));
+                    LatLng position = new LatLng(lat, lng);
+
+                    points.add(position);
+                }
+
+                // Adding all the points in the route to LineOptions
+                lineOptions.addAll(points);
+                lineOptions.width(10);
+                lineOptions.color(Color.BLUE);
+            }
+
+            // Drawing polyline in the Google Map for the i-th route
+            polyline = map.addPolyline(lineOptions);
+        }
+    }
+
+    private void routeDrawer(LatLng start, LatLng end){
+        final String URL1 = "https://maps.googleapis.com/maps/api/directions/json?origin=";
+        final String URL2 = "&destination=";
+        final String KEY = "&key=AIzaSyA_pHQ6ovzm1IA5YyvQdrFy9tjJlnxtNx4";
+        String startPoint = start.latitude + "," + start.longitude;
+        String endPoint = end.latitude + "," + end.longitude;
+        String url = URL1 + startPoint + URL2 + endPoint + KEY;
+
+        DownloadTask downloadTask = new DownloadTask();
+        downloadTask.execute(url);
     }
 }

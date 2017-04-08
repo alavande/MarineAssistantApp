@@ -1,14 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<RelativeLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/popup_window"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+<LinearLayout
+
     android:orientation="horizontal"
     android:layout_width="match_parent"
-    android:layout_height="150dp"
+    android:layout_height="130dp"
     android:gravity="center"
     android:background="@android:color/holo_orange_light">
 
     <LinearLayout
-        android:layout_marginTop="15dp"
+        android:layout_marginTop="10dp"
         android:orientation="vertical"
         android:layout_width="0dp"
         android:layout_height="match_parent"
@@ -27,22 +32,24 @@
                 android:gravity="center">
 
                 <ImageView
+                    android:id="@+id/start_point"
                     android:src="@drawable/start_point1"
                     android:layout_width="25dp"
                     android:layout_height="25dp" />
             </LinearLayout>
-            <EditText
+            <AutoCompleteTextView
                 android:background="#29000000"
                 android:id="@+id/start_text"
                 android:layout_width="0dp"
                 android:layout_height="40dp"
                 android:layout_weight="4"
-                android:text="start location"
+                android:hint="    start location"
+                android:textColorHint="@android:color/white"
                 android:textColor="@android:color/primary_text_dark_nodisable"/>
         </LinearLayout>
 
         <LinearLayout
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="15dp"
             android:orientation="horizontal"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
@@ -59,13 +66,14 @@
                     android:layout_width="30dp"
                     android:layout_height="30dp"/>
             </LinearLayout>
-            <EditText
+            <AutoCompleteTextView
                 android:background="#29000000"
                 android:id="@+id/end_text"
                 android:layout_width="0dp"
                 android:layout_height="40dp"
                 android:layout_weight="4"
-                android:text="end location"
+                android:hint="    end location"
+                android:textColorHint="@android:color/white"
                 android:textColor="@android:color/white"/>
         </LinearLayout>
     </LinearLayout>
@@ -82,3 +90,11 @@
             android:layout_height="wrap_content"/>
     </LinearLayout>
 </LinearLayout>
+
+    <ImageView
+        android:layout_marginLeft="37dp"
+        android:layout_marginTop="50dp"
+        android:src="@drawable/more_icon"
+        android:layout_width="22dp"
+        android:layout_height="22dp" />
+</RelativeLayout>
