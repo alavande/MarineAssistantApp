@@ -16,10 +16,10 @@ import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.Toast;
 import android.widget.VideoView;
 
-import com.google.android.gms.contextmanager.internal.TimeFilterImpl;
 import com.mingle.widget.LoadingView;
 
 public class MainActivity extends AppCompatActivity implements View.OnClickListener, MediaPlayer.OnCompletionListener {
@@ -28,6 +28,7 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
     private Button plannerBtn;
     private Intent intent;
     private VideoView videoView;
+    private ImageView logo;
 
     private AlertDialog build;
 
@@ -39,7 +40,8 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
 
         intent = new Intent();
 
-
+        logo = (ImageView) findViewById(R.id.app_logo);
+        logo.setOnClickListener(this);
 
         emergencyBtn = (ImageButton) findViewById(R.id.emergency_btn);
         emergencyBtn.setOnClickListener(this);
@@ -145,6 +147,10 @@ public class MainActivity extends AppCompatActivity implements View.OnClickListe
                 startActivity(intent);
 
 //                Toast.makeText(this, "In progress....", Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.app_logo:
+                intent.setClass(this, AboutUsActivity.class);
+                startActivity(intent);
                 break;
             default:
                 break;

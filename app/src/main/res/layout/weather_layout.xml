@@ -1,76 +1,84 @@
-<?xml version="1.0" encoding="utf-8"?>
-<RelativeLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
+<?xml version="1.0" encoding="UTF-8"?>
 
-    <ImageView
-        android:id="@+id/weatherpic"
-        android:layout_width="186dp"
-        android:layout_height="166dp"
-        android:src="@drawable/cloudy_img"
+    <RelativeLayout
+        android:background="@drawable/bg1"
+        android:layout_height="match_parent"
+        android:layout_width="match_parent"
+        xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <RelativeLayout
         android:layout_marginTop="20dp"
-        android:layout_toLeftOf="@+id/weatherInfo"
-        android:layout_toStartOf="@+id/weatherInfo" />
+        android:layout_marginBottom="10dp"
+        android:layout_marginLeft="10dp"
+        android:layout_marginRight="10dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+    <ImageView
+        android:layout_height="166dp"
+        android:layout_width="186dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentTop="true"
+        android:src="@drawable/cloud"
+        android:tint="#F4F6F7"
+        android:id="@+id/weatherpic"/>
+
     <TextView
-        android:id="@+id/weatherInfo"
-        android:layout_width="178dp"
         android:layout_height="163dp"
-        android:text="Max\nMin "
-        android:textSize="24sp"
-        android:gravity="center_vertical"
-        android:layout_alignTop="@+id/weatherpic"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true" />
-
-    <TextView
-        android:id="@+id/windspeed"
-        android:layout_width="192dp"
-        android:layout_height="79dp"
-        android:text="windspeed"
-        android:textSize="24sp"
-        android:gravity="center"
-        android:layout_below="@+id/weatherInfo"
-        android:layout_toLeftOf="@+id/weatherInfo"
-        android:layout_toStartOf="@+id/weatherInfo" />
-    <TextView
-        android:id="@+id/windspeedInfo"
-        android:layout_width="192dp"
-        android:layout_height="70dp"
-        android:text="3m/s"
-        android:textSize="24sp"
-        android:gravity="center"
-        android:layout_alignParentRight="true"
-        android:layout_alignParentEnd="true"
-        android:layout_alignBottom="@+id/windspeed"
-        android:layout_below="@+id/weatherInfo"
+        android:layout_width="186dp"
+        android:layout_alignParentTop="true"
+        android:id="@+id/weatherInfo"
         android:layout_toRightOf="@+id/weatherpic"
-        android:layout_toEndOf="@+id/weatherpic" />
-
-
-
-
-    <TextView
-        android:id="@+id/tideInfo"
-        android:layout_width="367dp"
-        android:layout_height="52dp"
+        android:layout_above="@+id/windspeedInfo"
+        android:layout_toEndOf="@+id/weatherpic"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
         android:gravity="center"
-        android:text="tide Info"
         android:textSize="24sp"
-        android:layout_below="@+id/windspeed"
-        android:layout_alignLeft="@+id/windspeed"
-        android:layout_alignStart="@+id/windspeed"
-        android:layout_marginTop="17dp" />
-    <TextView
-        android:id="@+id/tide"
-        android:layout_width="362dp"
-        android:layout_height="77dp"
-        android:gravity="center"
-        android:text="tide info display here"
-        android:textSize="20sp"
-        android:layout_below="@+id/tideInfo"
-        android:layout_alignRight="@+id/tideInfo"
-        android:layout_alignEnd="@+id/tideInfo"
-        android:layout_alignParentBottom="true" />
+        android:typeface="monospace"
+        android:textStyle="bold"
+        android:text="another"
+        android:textColor="#F4F6F7"/>
 
+    <TextView
+        android:layout_height="79dp"
+        android:layout_width="155dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentLeft="true"
+        android:id="@+id/windspeed"
+        android:gravity="center"
+        android:textSize="24sp"
+        android:typeface="monospace"
+        android:textStyle="bold"
+        android:text="windspeed"
+        android:textColor="#F4F6F7"
+        android:layout_below="@+id/weatherpic"/>
+
+    <TextView
+        android:layout_height="70dp"
+        android:layout_width="192dp"
+        android:id="@+id/windspeedInfo"
+        android:layout_toRightOf="@+id/windspeed"
+        android:layout_above="@+id/tideInfo"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentRight="true"
+        android:gravity="center"
+        android:textSize="20sp"
+        android:typeface="monospace"
+        android:textStyle="bold"
+        android:text="3m/s"
+        android:textColor="#F4F6F7"
+        android:layout_below="@+id/weatherpic"/>
+
+    <TextView android:layout_height="52dp" android:layout_width="wrap_content" android:layout_alignParentStart="true" android:layout_alignParentLeft="true" android:id="@+id/tideInfo" android:layout_above="@+id/tide0" android:layout_alignParentEnd="true" android:layout_alignParentRight="true" android:gravity="center" android:textSize="24sp" android:typeface="monospace" android:textStyle="bold" android:text="tide Info" android:textColor="#F4F6F7" android:layout_below="@+id/windspeed"/>
+
+    <TextView android:layout_height="60dp" android:layout_width="wrap_content" android:layout_alignParentStart="true" android:layout_alignParentLeft="true" android:id="@+id/tide0" android:layout_above="@+id/tide1" android:layout_alignParentEnd="true" android:layout_alignParentRight="true" android:gravity="center" android:textSize="20sp" android:typeface="monospace" android:textStyle="bold" android:text="tide0" android:textColor="#F4F6F7"/>
+
+    <TextView android:layout_height="60dp" android:layout_width="wrap_content" android:layout_alignParentStart="true" android:layout_alignParentLeft="true" android:id="@+id/tide1" android:layout_above="@+id/tide2" android:layout_alignParentEnd="true" android:layout_alignParentRight="true" android:gravity="center" android:textSize="20sp" android:typeface="monospace" android:textStyle="bold" android:text="tide1" android:textColor="#F4F6F7"/>
+
+    <TextView android:layout_height="60dp" android:layout_width="wrap_content" android:layout_alignParentStart="true" android:layout_alignParentLeft="true" android:id="@+id/tide2" android:layout_above="@+id/tide3" android:gravity="center" android:textSize="20sp" android:typeface="monospace" android:textStyle="bold" android:text="tide2" android:textColor="#F4F6F7" android:layout_alignEnd="@+id/tideInfo" android:layout_alignRight="@+id/tideInfo"/>
+
+    <TextView android:layout_height="60dp" android:layout_width="wrap_content" android:layout_alignParentStart="true" android:layout_alignParentLeft="true" android:id="@+id/tide3" android:layout_alignParentEnd="true" android:layout_alignParentRight="true" android:gravity="center" android:textSize="20sp" android:typeface="monospace" android:textStyle="bold" android:text="tide3" android:textColor="#F4F6F7" android:layout_alignParentBottom="true"/>
+
+    </RelativeLayout>
 </RelativeLayout>

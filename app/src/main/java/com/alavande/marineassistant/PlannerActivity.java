@@ -22,12 +22,15 @@ import android.widget.ImageButton;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 
+import com.getbase.floatingactionbutton.FloatingActionsMenu;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public class PlannerActivity extends AppCompatActivity implements View.OnClickListener {
 
-    private com.getbase.floatingactionbutton.FloatingActionButton addNoteBtn;
+    private com.getbase.floatingactionbutton.FloatingActionButton addNoteBtn, anotherBtn;
+    private com.getbase.floatingactionbutton.FloatingActionsMenu floatingActionsMenu;
     private RecyclerView noteView;
     private List<NoteEntity> notes;
     private Context context;
@@ -59,6 +62,13 @@ public class PlannerActivity extends AppCompatActivity implements View.OnClickLi
         layoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
         setRecycleView();
         addNoteBtn.setOnClickListener(this);
+
+        anotherBtn = (com.getbase.floatingactionbutton.FloatingActionButton) findViewById(R.id.another_thing);
+        anotherBtn.setOnClickListener(this);
+
+        floatingActionsMenu = (FloatingActionsMenu) findViewById(R.id.floating_menu);
+//        floatingActionsMenu.addButton(addNoteBtn);
+//        floatingActionsMenu.addButton(anotherBtn);
     }
 
     public List<NoteEntity> retriveNoteFromDatabase() {
@@ -134,16 +144,27 @@ public class PlannerActivity extends AppCompatActivity implements View.OnClickLi
 
     @Override
     public void onClick(View view) {
-//        Toast.makeText(this, "Floating Button Clicked", Toast.LENGTH_SHORT).show();
+//        Toast.makeText(this, "Floating Button Clicked", Toast.LENGTH_SHORT).show()
+        switch (view.getId()) {
+            case R.id.floating_menu:
+                floatingActionsMenu.setEnabled(!floatingActionsMenu.isEnabled());
+                break;
+            case R.id.floating_btn:
+                Intent intent = new Intent();
+                intent.setClass(this, AddNoteActivity.class);
+                Bundle data = new Bundle();
+                data.putString("key", "add");
+                intent.putExtra("data", data);
+                startActivity(intent);
+                finish();
+                break;
+            case R.id.another_thing:
+                Toast.makeText(this, "another button clicked", Toast.LENGTH_SHORT).show();
+                break;
+            default:
+                break;
+        }
 
-        Intent intent = new Intent();
-        intent.setClass(this, AddNoteActivity.class);
-        Bundle data = new Bundle();
-        data.putString("key", "add");
-
-        intent.putExtra("data", data);
-        startActivity(intent);
-        finish();
     }
 
     private void setRecycleView(){

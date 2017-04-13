@@ -26,5 +26,20 @@
             </menu>
         </item>
 
+        <item
+            android:title="Other">
+            <menu>
+                <item
+                    android:id="@+id/nav_play_around"
+                    android:icon="@drawable/play_icon"
+                    android:title="Play Around" />
+
+                <item
+                    android:id="@+id/nav_about_us"
+                    android:icon="@drawable/about_us_icon"
+                    android:title="About Us" />
+            </menu>
+        </item>
+
     </group>
 </menu>

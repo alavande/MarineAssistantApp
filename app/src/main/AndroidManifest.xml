@@ -15,6 +15,9 @@
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyD6KV8a1625EV8c7ohG8DhSdDZ42_sJa5I" />
+        <meta-data
+            android:name="com.google.android.awareness.API_KEY"
+            android:value="AIzaSyAoAdNxV_tcqt_qa-Opof-EUysWuh6GaxQ" />
 
         <activity android:name=".MainActivity">
             <intent-filter>
@@ -25,8 +28,9 @@
         </activity>
         <activity android:name=".MapActivity" />
         <activity android:name=".WeatherActivity" />
-        <activity android:name=".PlannerActivity"/>
-        <activity android:name=".AddNoteActivity"/>
+        <activity android:name=".PlannerActivity" />
+        <activity android:name=".AddNoteActivity" />
+        <activity android:name=".AboutUsActivity"></activity>
     </application>
 
 </manifest>

@@ -39,6 +39,7 @@ import android.widget.AdapterView;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
@@ -101,6 +102,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     private BottomSheetBehavior bottomSheetBehavior;
     private AutoCompleteTextView startPoint, endPoint;
 
+    private ImageView carMode, shipMode;
+
     private Polyline polyline;
     private PolylineOptions polylineOptions;
 
@@ -110,7 +113,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             boatAccessMarker, boatMooringMarker, secondBoatAccessMarker, secondBoatMooringMarker;
     private Marker searchHospitalMarker, searchPoliceMarker, searchBoatAccessMarker,
             searchBoatMooringMarker, searchSecondBoatAccessMarker, searchSecondBoatMooringMarker;
-    private Marker startMarker, endMarker;
+    private Marker startMarker, endMarker, currentMarker;
 
     private GoogleApiClient client;
     private LocationRequest locationRequest;
@@ -145,6 +148,12 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         context = this;
         handler = new Handler();
+
+        carMode = (ImageView) findViewById(R.id.car_mode);
+        carMode.setOnClickListener(this);
+        shipMode = (ImageView) findViewById(R.id.ship_mode);
+        shipMode.setOnClickListener(this);
+        shipMode.setVisibility(View.GONE);
 
         popupWindow = (RelativeLayout) findViewById(R.id.popup_window);
         popupWindow.setVisibility(View.GONE);
@@ -249,6 +258,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
         addMarkerToMap(currentLatLng);
+        currentMarker = marker;
 
         new Thread(new Runnable() {
             @Override
@@ -449,9 +459,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             polyline.remove();
         }
 
-        if (searchMarker != null) {
-            searchMarker.remove();
-        }
+//        if (searchMarker != null) {
+//            searchMarker.remove();
+//        }
 
         if (startMarker != null) {
             startMarker.remove();
@@ -512,20 +522,20 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             }
         }.execute(currentLatLng);
-
         map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17));
+        startMarker = marker;
         return true;
     }
 
     public void addMarkerToMap(final LatLng addLatLng){
 
-        if (marker != null) {
-            marker.remove();
-        }
+//        if (marker != null) {
+//            marker.remove();
+//        }
 
-        if (searchMarker != null) {
-            searchMarker.remove();
-        }
+//        if (searchMarker != null) {
+//            searchMarker.remove();
+//        }
 
         new AsyncTask<LatLng, Void, MarkerOptions>() {
             @Override
@@ -569,6 +579,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             protected void onPostExecute(MarkerOptions markerOptions) {
                 super.onPostExecute(markerOptions);
                 marker = map.addMarker(markerOptions);
+//                currentMarker = marker;
                 if (searchHospitalMarker != null && searchPoliceMarker != null) {
                     zoomMapToFitMarkers(markerOptions.getPosition(), searchHospitalMarker, searchPoliceMarker,
                             searchBoatAccessMarker, searchSecondBoatAccessMarker, searchBoatMooringMarker, searchSecondBoatMooringMarker);
@@ -578,6 +589,71 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
         }.execute(addLatLng);
     }
+
+    public void addSearchMarkerToMap(final LatLng addLatLng){
+
+//        if (marker != null) {
+//            marker.remove();
+//        }
+
+//        if (searchMarker != null) {
+//            searchMarker.remove();
+//        }
+
+        new AsyncTask<LatLng, Void, MarkerOptions>() {
+            @Override
+            protected MarkerOptions doInBackground(LatLng... latLngs) {
+
+                LatLng latLng = latLngs[0];
+                Geocoder geocoder = new Geocoder(MapActivity.this, Locale.getDefault());
+
+                List<Address> addresses = null;
+                String address, city, state, country, postalCode;
+
+                try {
+                    addresses = geocoder.getFromLocation(latLng.latitude, latLng.longitude, 1);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+
+                MarkerOptions markerOptions = new MarkerOptions();
+                markerOptions.position(latLng);
+
+                if (addresses != null) {
+
+                    Address site = addresses.get(0);
+
+                    address = site.getAddressLine(0);
+                    city = site.getLocality();
+                    state = site.getAdminArea();
+                    country = site.getCountryName();
+                    postalCode = site.getPostalCode();
+
+                    markerOptions.title(address + ", " + city + ", " + postalCode);
+                    markerOptions.snippet( state + ", " + country);
+                } else {
+                    markerOptions.title("Current Position");
+                    markerOptions.snippet("No detail provided");
+                }
+                return markerOptions;
+            }
+
+            @Override
+            protected void onPostExecute(MarkerOptions markerOptions) {
+                super.onPostExecute(markerOptions);
+                searchMarker = map.addMarker(markerOptions);
+//                currentMarker = marker;
+                if (searchHospitalMarker != null && searchPoliceMarker != null) {
+                    zoomMapToFitMarkers(markerOptions.getPosition(), searchHospitalMarker, searchPoliceMarker,
+                            searchBoatAccessMarker, searchSecondBoatAccessMarker, searchBoatMooringMarker, searchSecondBoatMooringMarker);
+                } else {
+
+                }
+            }
+        }.execute(addLatLng);
+    }
+
+
 
     @Override
     public boolean onNavigationItemSelected(MenuItem item) {
@@ -623,6 +699,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     zoomMapToFitMarker(boatMooringMarker);
                 }
 //                Toast.makeText(this, "In progress...", Toast.LENGTH_SHORT).show();
+                break;
+            case R.id.nav_play_around:
+                Intent intent = new Intent();
+                intent.setClass(this, AboutUsActivity.class);
+                startActivity(intent);
                 break;
             default:
                 break;
@@ -727,11 +808,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     @Override
     public void onMapLongClick(LatLng latLng) {
 
-        if (marker != null) {
-            marker.remove();
+        if (searchMarker != null) {
+            searchMarker.remove();
         }
 
-        addMarkerToMap(latLng);
+        if (polyline != null) {
+            polyline.remove();
+        }
+
+        addSearchMarkerToMap(latLng);
         searchHospitalAtOtherPlace(latLng);
         searchPoliceAtOtherPlace(latLng);
         searchBoatAccessAtOtherPlace(latLng);
@@ -740,14 +825,42 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         zoomMapToFitMarkers(latLng, searchHospitalMarker, searchPoliceMarker,
                 searchBoatAccessMarker, searchSecondBoatAccessMarker,
                 searchBoatMooringMarker, searchSecondBoatMooringMarker);
+
+        endMarker = searchMarker;
     }
 
     @Override
     public boolean onMarkerClick(Marker marker) {
 
-        if (!searchMarker.getTitle().equals(marker.getTitle())) {
-            searchMarker.setVisible(false);
+        if (navigationBtn.getVisibility() == View.GONE) {
+            navigationBtn.setVisibility(View.VISIBLE);
         }
+
+        if (popupWindow.getVisibility() == View.VISIBLE) {
+            navigationBtn.setVisibility(View.GONE);
+        }
+
+//        if (startMarker != null) {
+//            searchMarker.setVisible(false);
+//        }
+
+//        if (startMarker != null) {
+//            startMarker.remove();
+//        }
+//
+//        if (endMarker != null) {
+//            endMarker.remove();
+//        }
+//        if (searchMarker == null) {
+//            searchMarker = marker;
+//        }
+
+        if (endMarker == null) {
+            endMarker = marker;
+        }
+//        if (!searchMarker.getTitle().equals(marker.getTitle())) {
+//            searchMarker.setVisible(false);
+//        }
 
         if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED){
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
@@ -765,45 +878,57 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         }
 
         if (startPoint.isFocused()) {
+            if (searchMarker.isVisible()) {
+                searchMarker.setVisible(false);
+            }
             startPoint.setText("    " + marker.getTitle());
-            startMarker = marker;
+//            startMarker.setPosition(marker.getPosition());
+//            startMarker.setTitle(marker.getTitle());
+            startMarker.setPosition(marker.getPosition());
+            startMarker.setTitle(marker.getTitle());
         }
-        if (endPoint.isFocused() || (!endPoint.isFocused() && !startPoint.isFocused())) {
+        if (endPoint.isFocused() || (!endPoint.isFocused() && !startPoint.isFocused() && popupWindow.getVisibility() == View.VISIBLE) || (popupWindow.getVisibility() ==  View.GONE)) {
+            if (searchMarker.isVisible() && startMarker != null) {
+                searchMarker.setVisible(false);
+            }
             endPoint.setText("    " + marker.getTitle());
-            endMarker = marker;
+//            endMarker.setPosition(marker.getPosition());
+//            endMarker.setTitle(marker.getTitle());
+            endMarker.setPosition(marker.getPosition());
+            endMarker.setTitle(marker.getTitle());
         }
 
         return true;
     }
 
-    public void findRoute(){
-
-        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
-
-        Double distance = SphericalUtil.computeDistanceBetween(currentLatLng, searchMarker.getPosition());
-
-        if (polyline != null) {
-            polyline.remove();
-        }
-
-        if (distance > 0) {
-            PolylineOptions rectOptions = new PolylineOptions()
-                    .add(currentLatLng)
-                    .add(searchMarker.getPosition());
-
-            // Get back the mutable Polyline
-            polyline = map.addPolyline(rectOptions);
-
-            zoomMapToFitMarker(searchMarker);
-
-            double reformate = distance / 1000;
-
-            Toast.makeText(this, "Distance is: " + String.format("%.3f", reformate) + " km.", Toast.LENGTH_SHORT).show();
-        } else {
-
-            Toast.makeText(this, "You are here now.", Toast.LENGTH_SHORT).show();
-        }
-    }
+//    public void findRoute(){
+//
+//        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+//
+//        Double distance = SphericalUtil.computeDistanceBetween(currentLatLng, searchMarker.getPosition());
+//
+//        if (polyline != null) {
+//            polyline.remove();
+//        }
+//
+//        if (distance > 0) {
+//            PolylineOptions rectOptions = new PolylineOptions()
+//                    .add(currentLatLng)
+//                    .add(searchMarker.getPosition());
+//
+//            // Get back the mutable Polyline
+//            polyline = map.addPolyline(rectOptions);
+//
+//            zoomMapToFitMarker(searchMarker);
+//
+//            double reformate = distance / 1000;
+//
+//            Toast.makeText(this, "Distance is: " + String.format("%.3f", reformate) + " km.", Toast.LENGTH_SHORT).show();
+//        } else {
+//
+//            Toast.makeText(this, "You are here now.", Toast.LENGTH_SHORT).show();
+//        }
+//    }
 
     public void findRouteFromAtoB(){
 
@@ -1404,11 +1529,13 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         switch (view.getId()) {
             case R.id.navigation_btn:
 
-                if (searchMarker == null) {
+                if (endMarker == null) {
                     Toast.makeText(this, "Please find your destination.", Toast.LENGTH_SHORT).show();
                     return;
                 }
-                animOpen(popupWindow);
+                if (popupWindow.getVisibility() != View.VISIBLE) {
+                    animOpen(popupWindow);
+                }
                 if (startMarker == null) {
                     startPoint.setText("    Current Location");
                     startMarker = marker;
@@ -1416,10 +1543,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     startPoint.setText("    " + startMarker.getTitle());
                 }
 
-                endPoint.setText("    " + searchMarker.getTitle());
+                endPoint.setText("    " + endMarker.getTitle());
 
                 navigationBtn.setVisibility(View.GONE);
-                endMarker = searchMarker;
+//                endMarker = searchMarker;
 //                findRoute();
 //                Toast.makeText(this, "In progress...", Toast.LENGTH_SHORT).show();
                 break;
@@ -1429,15 +1556,32 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                     polyline.remove();
                 }
 
-                if (searchMarker == null) {
+                if (startMarker == null) {
+                    startMarker = marker;
+                }
+//                if (endMarker == null) {
+//                    endMarker = marker;
+//                }
+
+                if (startPoint.getText().equals(endPoint.getText())) {
                     Toast.makeText(this, "Your are here now.", Toast.LENGTH_SHORT).show();
                 }
 
-                if (startPoint.getText().equals("    Current Location")) {
-                    startMarker = marker;
+//                if (startPoint.getText().equals("    Current Location")) {
+//                    startMarker = currentMarker;
+//                }
+
+                if (carMode.getVisibility() == View.VISIBLE) {
+                    routeDrawer(startMarker.getPosition(), endMarker.getPosition());
+                } else {
+                    PolylineOptions rectOptions = new PolylineOptions()
+                            .add(startMarker.getPosition())
+                            .add(endMarker.getPosition());
+
+                    // Get back the mutable Polyline
+                    polyline = map.addPolyline(rectOptions);
                 }
 
-                routeDrawer(startMarker.getPosition(), endMarker.getPosition());
                 zoomMapToFitTwoMarkers(startMarker, endMarker);
                 double distance = SphericalUtil.computeDistanceBetween(startMarker.getPosition(), endMarker.getPosition());
                 double time = (distance / 1000) / 40;
@@ -1449,6 +1593,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 navigationBtn.setVisibility(View.VISIBLE);
                 animClose(popupWindow);
                 bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+                break;
+            case R.id.car_mode:
+                carMode.setVisibility(View.GONE);
+                shipMode.setVisibility(View.VISIBLE);
+                break;
+            case R.id.ship_mode:
+                carMode.setVisibility(View.VISIBLE);
+                shipMode.setVisibility(View.GONE);
+                break;
             default:
                 break;
         }
@@ -1519,9 +1672,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
             // Display the third party attributions if set.
-            if (marker != null) {
-                marker.remove();
-            }
+//            if (marker != null) {
+//                marker.remove();
+//            }
 
             if (searchMarker != null) {
                 searchMarker.remove();
@@ -1538,6 +1691,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
 
             LatLng latLng = searchMarker.getPosition();
+            endMarker = searchMarker;
             searchHospitalAtOtherPlace(latLng);
             searchPoliceAtOtherPlace(latLng);
             searchBoatAccessAtOtherPlace(latLng);
@@ -1605,6 +1759,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             if (startMarker != null) {
                 startMarker.remove();
             }
+            if (searchMarker != null) {
+                searchMarker.remove();
+            }
             MarkerOptions options = new MarkerOptions();
             options.position(place.getLatLng());
 
@@ -1671,6 +1828,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             // Display the third party attributions if set.
             if (endMarker != null){
                 endMarker.remove();
+            }
+            if (searchMarker != null) {
+                searchMarker.remove();
             }
             MarkerOptions options = new MarkerOptions();
             options.position(place.getLatLng());
