@@ -25,9 +25,12 @@ public class AboutUsPageAdapter extends FragmentPagerAdapter {
             case 0:
                 Fragment aboutUsFragment = new AboutUsFragment();
                 return aboutUsFragment;
+//            case 1:
+//                Fragment contactUsFragment = new ContactUsFragment();
+//                return contactUsFragment;
             case 1:
-                Fragment contactUsFragment = new ContactUsFragment();
-                return contactUsFragment;
+                Fragment instructionFragment = new InstructionFragment();
+                return instructionFragment;
             default:
                 return null;
         }
@@ -43,8 +46,10 @@ public class AboutUsPageAdapter extends FragmentPagerAdapter {
         switch (position) {
             case 0:
                 return "About Us";
+//            case 1:
+//                return "Contact Us";
             case 1:
-                return "Contact Us";
+                return "Instruction";
             default:
                 return "None";
         }
