@@ -10,7 +10,6 @@
     app:behavior_peekHeight="80dp"
     app:layout_behavior="android.support.design.widget.BottomSheetBehavior">
 
-
     <LinearLayout
         android:orientation="horizontal"
         android:layout_width="match_parent"
@@ -131,8 +130,5 @@
                 android:text="location"
                 android:textColor="@android:color/black" />
         </LinearLayout>
-
     </LinearLayout>
-
-
 </LinearLayout>

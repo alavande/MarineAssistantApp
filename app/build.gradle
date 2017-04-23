@@ -1,12 +1,17 @@
 apply plugin: 'com.android.application'
 
 android {
+
+    dexOptions {
+        javaMaxHeapSize "4g"
+    }
     compileSdkVersion 24
     buildToolsVersion "24.0.3"
     defaultConfig {
         applicationId "com.alavande.marineassistant"
-        minSdkVersion 14
+        minSdkVersion 15
         targetSdkVersion 24
+        multiDexEnabled true
         versionCode 1
         versionName "1.0"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -37,5 +42,10 @@ dependencies {
     compile 'com.github.zzz40500:android-shapeLoadingView:1.0.3.2'
     compile 'com.google.code.gson:gson:2.7'
     compile 'com.squareup.okhttp3:okhttp:3.4.1'
+    compile 'com.android.support:multidex:1.0.1'
+    compile 'com.ms-square:expandableTextView:0.1.4'
+//    compile 'cn.yipianfengye.android:ad-library:1.0'
+    compile 'com.github.open-android:GuideDialog:0.1.0'
+    compile 'com.github.PhilJay:MPAndroidChart:v3.0.2'
     testCompile 'junit:junit:4.12'
 }

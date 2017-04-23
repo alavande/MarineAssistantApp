@@ -32,7 +32,22 @@
                 <item
                     android:id="@+id/nav_play_around"
                     android:icon="@drawable/play_icon"
-                    android:title="Play Around" />
+                    android:title="Marina" />
+
+                <item
+                    android:id="@+id/nav_zone"
+                    android:icon="@drawable/nav_fish_icon"
+                    android:title="Fish Area" />
+
+                <item
+                    android:id="@+id/nav_diving"
+                    android:icon="@drawable/nav_diving_icon"
+                    android:title="Diving" />
+
+                <item
+                    android:id="@+id/nav_wind"
+                    android:icon="@drawable/nav_wind_icon2"
+                    android:title="Wind Forecast" />
 
                 <item
                     android:id="@+id/nav_about_us"
@@ -40,6 +55,5 @@
                     android:title="About Us" />
             </menu>
         </item>
-
     </group>
 </menu>

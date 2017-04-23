@@ -2,4 +2,7 @@
     <string name="app_name">Marine Assistant</string>
 
     <string name="hello_blank_fragment">Hello blank fragment</string>
+
+    <string name="dummy_text1"><b>About us</b> \nWe are team summit who implement this software for users use in seaside.</string>
+    <string name="dummy_text2"><b>Contact us</b> \n<b>Phone: </b>040******* \n<b>Address: </b>Monosh University, VIC \n<b>Email: </b>team.summit@gmail.com</string>
 </resources>
