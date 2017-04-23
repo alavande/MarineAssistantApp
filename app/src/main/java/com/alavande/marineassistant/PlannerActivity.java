@@ -8,12 +8,14 @@ import android.graphics.Color;
 import android.os.Build;
 import android.os.Handler;
 import android.provider.ContactsContract;
+import android.support.annotation.RequiresApi;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
+import android.transition.Fade;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
@@ -46,6 +48,7 @@ public class PlannerActivity extends AppCompatActivity implements View.OnClickLi
             "feeling of anything.', '29/03/2017 11:00');";
 
 
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -69,6 +72,8 @@ public class PlannerActivity extends AppCompatActivity implements View.OnClickLi
         floatingActionsMenu = (FloatingActionsMenu) findViewById(R.id.floating_menu);
 //        floatingActionsMenu.addButton(addNoteBtn);
 //        floatingActionsMenu.addButton(anotherBtn);
+
+//        setupWindowAnimations();
     }
 
     public List<NoteEntity> retriveNoteFromDatabase() {
@@ -189,5 +194,15 @@ public class PlannerActivity extends AppCompatActivity implements View.OnClickLi
             WindowManager.LayoutParams localLayoutParams = getWindow().getAttributes();
             localLayoutParams.flags = (WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS | localLayoutParams.flags);
         }
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP)
+    private void setupWindowAnimations(){
+
+            Fade fade = new Fade();
+            fade.setDuration(1000);
+            getWindow().setEnterTransition(fade);
+
+
     }
 }

@@ -12,9 +12,6 @@ import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-
-import java.util.List;
-
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -30,6 +27,14 @@ import org.json.JSONObject;
 import android.content.Context;
 
 import com.arlib.floatingsearchview.FloatingSearchView;
+import com.github.mikephil.charting.charts.LineChart;
+import com.github.mikephil.charting.components.YAxis;
+import com.github.mikephil.charting.data.ChartData;
+import com.github.mikephil.charting.data.Entry;
+import com.github.mikephil.charting.data.LineData;
+import com.github.mikephil.charting.data.LineDataSet;
+import com.github.mikephil.charting.formatter.IAxisValueFormatter;
+import com.github.mikephil.charting.interfaces.datasets.ILineDataSet;
 import com.google.android.gms.awareness.Awareness;
 import com.google.android.gms.awareness.SnapshotApi;
 import com.google.android.gms.awareness.snapshot.LocationResult;
@@ -44,34 +49,30 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.model.LatLng;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 
+
 public class WeatherActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
     private TextView windspeedInfo;
     private TextView tideInfo;
-    private TextView tide0;
-    private TextView tide1;
-    private TextView tide2;
-    private TextView tide3;
     private TextView windspeed;
+    private TextView airpressureInfo;
+    private TextView airpressure;
+    private LineChart chart;
     private TextView weatherInfo;
     private ImageView weatherpic;
     private static final int weather = 1;
     private static final int sendtide = 1;
     private static final int Wind = 1;
     private static final int changepic = 1;
+    private static final int pressure = 1;
     private GoogleApiClient client;
-    private LocationManager locationManager;//
-    private LocationRequest locationRequest;
-    private Location location;
-
     private double lat, lon;
-
-    private LatLng currentLatLng;
-    private String provider;//
 
 
     public void buildGoogleApiClient() {
@@ -90,61 +91,17 @@ public class WeatherActivity extends AppCompatActivity implements GoogleApiClien
         @Override
         public void handleMessage(android.os.Message msg) {
 
-            String data = msg.getData().getString("msg");
+            float[] data = msg.getData().getFloatArray("msg");
 
 
             if (msg.what == sendtide) {
-                tide0.setText(data);
+                doSomething(data[0],data[1],data[2],data[3],data[4],data[5]);
             }
         }
 
 
     };
-    Handler tide1handler = new Handler() {
 
-        @Override
-        public void handleMessage(android.os.Message msg) {
-
-            String data = msg.getData().getString("msg");
-
-
-            if (msg.what == sendtide) {
-                tide1.setText(data);
-            }
-        }
-
-
-    };
-    Handler tide2handler = new Handler() {
-
-        @Override
-        public void handleMessage(android.os.Message msg) {
-
-            String data = msg.getData().getString("msg");
-
-
-            if (msg.what == sendtide) {
-                tide2.setText(data);
-            }
-        }
-
-
-    };
-    Handler tide3handler = new Handler() {
-
-        @Override
-        public void handleMessage(android.os.Message msg) {
-
-            String data = msg.getData().getString("msg");
-
-
-            if (msg.what == sendtide) {
-                tide3.setText(data);
-            }
-        }
-
-
-    };
     Handler weatherHandler = new Handler() {
 
         @Override
@@ -155,6 +112,23 @@ public class WeatherActivity extends AppCompatActivity implements GoogleApiClien
 
             if (msg.what == weather) {
                 weatherInfo.setText(data);
+
+            }
+        }
+
+
+    };
+
+    Handler pressureHandler = new Handler() {
+
+        @Override
+        public void handleMessage(android.os.Message msg) {
+
+            String data = msg.getData().getString("msg");
+
+
+            if (msg.what == pressure) {
+                airpressureInfo.setText(data);
             }
         }
 
@@ -182,8 +156,6 @@ public class WeatherActivity extends AppCompatActivity implements GoogleApiClien
         public void handleMessage(android.os.Message msg) {
 
             String data = msg.getData().getString("msg");
-
-
             if (msg.what == changepic) {
                 changeWeatherImg(data);
             }
@@ -198,28 +170,20 @@ public class WeatherActivity extends AppCompatActivity implements GoogleApiClien
         super.onCreate(savedInstanceState);
         setContentView(R.layout.weather_layout);
         tideInfo = (TextView) findViewById(R.id.tideInfo);
-        tide0 = (TextView) findViewById(R.id.tide0);
-        tide1 = (TextView) findViewById(R.id.tide1);
-        tide2 = (TextView) findViewById(R.id.tide2);
-        tide3 = (TextView) findViewById(R.id.tide3);
+        chart = (LineChart) findViewById(R.id.chart);
         windspeed = (TextView) findViewById(R.id.windspeed);
         windspeedInfo = (TextView) findViewById(R.id.windspeedInfo);
         weatherInfo = (TextView) findViewById(R.id.weatherInfo);
+        airpressureInfo = (TextView) findViewById(R.id.airpressureInfo);
+        airpressure = (TextView) findViewById(R.id.airpressure);
         weatherpic = (ImageView) findViewById(R.id.weatherpic);
-//        locationRequest = new LocationRequest();
-//        locationRequest.setInterval(5000);
-//        locationRequest.setFastestInterval(5000);
+
         if (ContextCompat.checkSelfPermission(this,
                 android.Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED) {
-//            LocationServices.FusedLocationApi.requestLocationUpdates(client, locationRequest, (com.google.android.gms.location.LocationListener) this);
         }
         buildGoogleApiClient();
         checkLocationPermission();
-//        LocationServices.FusedLocationApi.requestLocationUpdates(
-//                client, locationRequest, (com.google.android.gms.location.LocationListener) this);
-//        location=LocationServices.FusedLocationApi.getLastLocation(
-//                client);
 
         Awareness.SnapshotApi.getLocation(client)
                 .setResultCallback(new ResultCallback<LocationResult>() {
@@ -244,7 +208,6 @@ public class WeatherActivity extends AppCompatActivity implements GoogleApiClien
         }).start();
 
     }
-
     private String buildWeatherAPIString(double lat,double lon){
         String key="&appid=4411135c80bf7b41e26384708252cfa6";
         String link="http://api.openweathermap.org/data/2.5/weather?lat=";
@@ -295,17 +258,21 @@ public class WeatherActivity extends AppCompatActivity implements GoogleApiClien
                 ActivityCompat.requestPermissions(WeatherActivity.this, new String[] {android.Manifest.permission.ACCESS_FINE_LOCATION}, 1);
             }
         }
-    }private void parseWeatherJSON(String responseData) {
+    }
+    private void parseWeatherJSON(String responseData) {
         String toPrint = "bbb";
         String windspeed = "aaa";
         String windDegree="";
         String theweather = "";
+        String airpressure = "";
         try {
             JSONObject jsonObject = new JSONObject(responseData);
 
             JSONObject main = jsonObject.getJSONObject("main");
             String String1=main.getString("temp_min");
             String String2=main.getString("temp_max");
+            String String3=main.getString("pressure");
+            airpressure = String3+ " pa";
             Double temp_min= (Double.parseDouble(String1)-273.15);
             Double temp_max= (Double.parseDouble(String2)-273.15);
             toPrint="Min "+Double.toString(Math.round(temp_min))+" C"+"\n"+"Max "+Double.toString(Math.round(temp_max))+" C";
@@ -313,6 +280,8 @@ public class WeatherActivity extends AppCompatActivity implements GoogleApiClien
             JSONObject wind = jsonObject.getJSONObject("wind");
             windspeed =wind.getString("speed");
             windspeed=windspeed+"km/h";
+
+
 
             String deg= wind.getString("deg");
             Double Degree=Double.parseDouble(deg);
@@ -348,6 +317,7 @@ public class WeatherActivity extends AppCompatActivity implements GoogleApiClien
             theweather=weathers.getString("main");
 
 
+
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -376,51 +346,48 @@ public class WeatherActivity extends AppCompatActivity implements GoogleApiClien
         message3.what = changepic;
         picHander.sendMessage(message3);
 
+        Message message4 = Message.obtain();
+        Bundle bundle4 = new Bundle();
+        bundle4.putString("msg", airpressure);
+        message4.setData(bundle4);
+        message4.what = pressure;
+        pressureHandler.sendMessage(message4);
+
     }
 
     private void parseTideJSON(String responseData) {
-        String[] toPrint = new String[4];
+        float[] toPrint = new float[6];
         try {
             JSONObject jsonObject = new JSONObject(responseData);
             JSONArray extremes = jsonObject.getJSONArray("extremes");
-            for(int i=0;i<=3;i++){
+            for(int i=0;i<=5;i++){
                 toPrint[i]=getTideInfo(extremes,i);
             }
 
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        Handler[] handlers = new Handler[4];
-        handlers[0]=tide0handler;
-        handlers[1]=tide1handler;
-        handlers[2]=tide2handler;
-        handlers[3]=tide3handler;
-        for(int i=0;i<=3;i++){
-            sentMessage(toPrint[i],handlers[i]);
+
+        for(int i=0;i<=5;i++){
+            sentMessage(toPrint,tide0handler);
         }
 
     }
 
-    private String getTideInfo(JSONArray extremes, int i){
-        String string="";
+    private float getTideInfo(JSONArray extremes, int i){
+        float height=0.0f;
         try{
             JSONObject extreme= extremes.getJSONObject(i);
-            string =extreme.getString("date");
-            String height =extreme.getString("height");
-            String type =extreme.getString("type");
-            String[] array0 = string.split("T");
-            array0 = array0[1].split("\\+");
-            string=array0[0]+" "+height+" "+type;
-
+            height =(float)extreme.getDouble("height");
         } catch (JSONException e) {
             e.printStackTrace();
         }
-        return string;
+        return height;
     }
-    private void sentMessage(String toPrint,Handler handler){
+    private void sentMessage(float[] toPrint, Handler handler){
         Message message = Message.obtain();
         Bundle bundle = new Bundle();
-        bundle.putString("msg", toPrint);
+        bundle.putFloatArray("msg", toPrint);
         message.setData(bundle);
         message.what = sendtide;
         handler.sendMessage(message);
@@ -442,14 +409,7 @@ public class WeatherActivity extends AppCompatActivity implements GoogleApiClien
 
     @Override
     public void onConnected(@Nullable Bundle bundle) {
-//        locationRequest = new LocationRequest();
-//        locationRequest.setInterval(5000);
-//        locationRequest.setFastestInterval(5000);
-//        if (ContextCompat.checkSelfPermission(this,
-//                android.Manifest.permission.ACCESS_FINE_LOCATION)
-//                == PackageManager.PERMISSION_GRANTED) {
-//            LocationServices.FusedLocationApi.requestLocationUpdates(client, locationRequest, (com.google.android.gms.location.LocationListener) this);
-//        }
+
     }
 
     @Override
@@ -461,4 +421,31 @@ public class WeatherActivity extends AppCompatActivity implements GoogleApiClien
     public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
 
     }
+    public void setData(ChartData data) {
+        chart.setData((LineData) data);
+        chart.invalidate();
+        chart.setTouchEnabled(false);
+    }
+
+    private void doSomething(float tide1,float tide2,float tide3,float tide4,float tide5,float tide6) {
+        Entry c1e1 = new Entry(0f, tide1);
+        List<Entry> valsComp1 = new ArrayList<>();
+        valsComp1.add(c1e1);
+        Entry c1e2 = new Entry(1f, tide2); // 1 == quarter 2 ...
+        valsComp1.add(c1e2);
+        Entry c1e3 = new Entry(2f, tide3); // 1 == quarter 2 ...
+        valsComp1.add(c1e3);
+        Entry c1e4 = new Entry(3f, tide4); // 1 == quarter 2 ...
+        valsComp1.add(c1e4);
+        Entry c1e5 = new Entry(4f, tide5); // 1 == quarter 2 ...
+        valsComp1.add(c1e5);
+        Entry c1e6 = new Entry(5f, tide6); // 1 == quarter 2 ...
+        valsComp1.add(c1e6);
+        LineDataSet setComp1 = new LineDataSet(valsComp1, "Tide height");
+        List<ILineDataSet> dataSets = new ArrayList<>();
+        dataSets.add(setComp1);
+        LineData data = new LineData(dataSets);
+        setData(data);
+    }
 }
+
