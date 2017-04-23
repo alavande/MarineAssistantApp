@@ -30,6 +30,7 @@ import android.support.v4.widget.DrawerLayout;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.transition.Fade;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
@@ -145,6 +146,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.map_layout);
+
+//        setupWindowAnimations();
 
         context = this;
         handler = new Handler();
@@ -642,6 +645,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             protected void onPostExecute(MarkerOptions markerOptions) {
                 super.onPostExecute(markerOptions);
                 searchMarker = map.addMarker(markerOptions);
+                endMarker = searchMarker;
 //                currentMarker = marker;
                 if (searchHospitalMarker != null && searchPoliceMarker != null) {
                     zoomMapToFitMarkers(markerOptions.getPosition(), searchHospitalMarker, searchPoliceMarker,
@@ -665,6 +669,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         if (polyline != null) {
             polyline.remove();
         }
+
+        Intent intent = new Intent();
+        Bundle bundle = new Bundle();
+        String url = null;
 
         switch (item.getItemId()) {
             case R.id.nav_police:
@@ -700,9 +708,35 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 }
 //                Toast.makeText(this, "In progress...", Toast.LENGTH_SHORT).show();
                 break;
-            case R.id.nav_play_around:
-                Intent intent = new Intent();
+            case R.id.nav_about_us:
                 intent.setClass(this, AboutUsActivity.class);
+                startActivity(intent);
+                break;
+            case R.id.nav_zone:
+//                intent.setClass(this, WindForecastActivity.class);
+//                url = "http://www.exploreaustralia.net.au/Activities/Fishing-spots/Victoria";
+//                bundle.putString("url", url);
+                intent.setClass(this, MapZoneActivity.class);
+                bundle.putInt("item", 1);
+                intent.putExtras(bundle);
+                startActivity(intent);
+                break;
+            case R.id.nav_wind:
+                intent.setClass(this, WindForecastActivity.class);
+                intent.putExtras(new Bundle());
+                startActivity(intent);
+                break;
+            case R.id.nav_play_around:
+                intent.setClass(this, MapZoneActivity.class);
+                bundle.putInt("item", 2);
+                intent.putExtras(bundle);
+                startActivity(intent);
+                break;
+            case R.id.nav_diving:
+                intent.setClass(this, WindForecastActivity.class);
+                url = "http://www.divevictoria.com.au/boat-diving/dive-site-interactive-map.html";
+                bundle.putString("url", url);
+                intent.putExtras(bundle);
                 startActivity(intent);
                 break;
             default:
@@ -816,6 +850,21 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             polyline.remove();
         }
 
+        if (endMarker != null) {
+            endMarker.remove();
+        }
+
+        if (startMarker != null) {
+            startMarker.remove();
+        }
+
+        startMarker = generateMarker(marker.getPosition(), marker.getTitle());
+
+        animOpen(popupWindow);
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        navigationBtn.setVisibility(View.GONE);
+        startPoint.setText("    current location");
+
         addSearchMarkerToMap(latLng);
         searchHospitalAtOtherPlace(latLng);
         searchPoliceAtOtherPlace(latLng);
@@ -826,7 +875,6 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 searchBoatAccessMarker, searchSecondBoatAccessMarker,
                 searchBoatMooringMarker, searchSecondBoatMooringMarker);
 
-        endMarker = searchMarker;
     }
 
     @Override
@@ -840,26 +888,25 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             navigationBtn.setVisibility(View.GONE);
         }
 
-//        if (startMarker != null) {
-//            searchMarker.setVisible(false);
-//        }
-
-//        if (startMarker != null) {
-//            startMarker.remove();
-//        }
-//
-//        if (endMarker != null) {
-//            endMarker.remove();
-//        }
-//        if (searchMarker == null) {
-//            searchMarker = marker;
-//        }
+        if (polyline != null) {
+            polyline.remove();
+        }
 
         if (endMarker == null) {
-            endMarker = marker;
+            endMarker = generateMarker(marker.getPosition(), marker.getTitle());
+            endMarker.setVisible(false);
         }
-//        if (!searchMarker.getTitle().equals(marker.getTitle())) {
-//            searchMarker.setVisible(false);
+
+//        if (searchMarker != null) {
+//            searchMarker.remove();
+//        }
+
+        if (startMarker != null) {
+            startMarker.setVisible(false);
+        }
+
+//        if (endMarker == null && searchMarker == null) {
+//            searchMarker = generateMarker(marker.getPosition(), marker.getTitle());
 //        }
 
         if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED){
@@ -878,8 +925,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         }
 
         if (startPoint.isFocused()) {
-            if (searchMarker.isVisible()) {
-                searchMarker.setVisible(false);
+            if (searchMarker != null) {
+                if (searchMarker.isVisible()) {
+                    searchMarker.setVisible(false);
+                }
             }
             startPoint.setText("    " + marker.getTitle());
 //            startMarker.setPosition(marker.getPosition());
@@ -887,18 +936,31 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             startMarker.setPosition(marker.getPosition());
             startMarker.setTitle(marker.getTitle());
         }
-        if (endPoint.isFocused() || (!endPoint.isFocused() && !startPoint.isFocused() && popupWindow.getVisibility() == View.VISIBLE) || (popupWindow.getVisibility() ==  View.GONE)) {
-            if (searchMarker.isVisible() && startMarker != null) {
+        if (endPoint.isFocused() || (popupWindow.getVisibility() ==  View.GONE)) {
+            if (startMarker != null && searchMarker != null && searchMarker.isVisible()) {
                 searchMarker.setVisible(false);
             }
             endPoint.setText("    " + marker.getTitle());
 //            endMarker.setPosition(marker.getPosition());
 //            endMarker.setTitle(marker.getTitle());
-            endMarker.setPosition(marker.getPosition());
-            endMarker.setTitle(marker.getTitle());
+            endMarker = generateMarker(marker.getPosition(), marker.getTitle());
+        }
+
+        if (!endPoint.isFocused() && !startPoint.isFocused() && popupWindow.getVisibility() == View.VISIBLE){
+            startPoint.setText(marker.getTitle());
+            startMarker = generateMarker(marker.getPosition(), marker.getTitle());
         }
 
         return true;
+    }
+
+    private Marker generateMarker(LatLng latLng, String title) {
+
+        MarkerOptions options = new MarkerOptions();
+        options.title(title);
+        options.position(latLng);
+
+        return map.addMarker(options);
     }
 
 //    public void findRoute(){
@@ -1664,8 +1726,9 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             // Format details of the place for display and show it in a TextView.
             Log.i("result", place.getAddress() + "");
-
-            if (!place.getLocale().getCountry().toString().equals("AU")) {
+            String country = place.getId().substring(place.getId().length() - 2);
+            Log.i("country", country);
+            if (!country.equals("AU")) {
                 Toast.makeText(context, "Not in Australia", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -1692,6 +1755,10 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             LatLng latLng = searchMarker.getPosition();
             endMarker = searchMarker;
+            animOpen(popupWindow);
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            navigationBtn.setVisibility(View.GONE);
+
             searchHospitalAtOtherPlace(latLng);
             searchPoliceAtOtherPlace(latLng);
             searchBoatAccessAtOtherPlace(latLng);
@@ -1749,8 +1816,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             // Format details of the place for display and show it in a TextView.
             Log.i("result", place.getAddress() + "");
-
-            if (!place.getLocale().getCountry().toString().equals("AU")) {
+            String country = place.getId().substring(place.getId().length() - 2);
+            if (!country.equals("AU")) {
                 Toast.makeText(context, "Not in Australia", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -1819,8 +1886,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             // Format details of the place for display and show it in a TextView.
             Log.i("result", place.getAddress() + "");
-
-            if (!place.getLocale().getCountry().toString().equals("AU")) {
+            String country = place.getId().substring(place.getId().length() - 2);
+            if (!country.equals("AU")) {
                 Toast.makeText(context, "Not in Australia", Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -2020,5 +2087,15 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
         DownloadTask downloadTask = new DownloadTask();
         downloadTask.execute(url);
+    }
+
+    private void setupWindowAnimations(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Fade fade = new Fade();
+            fade.setDuration(1000);
+            getWindow().setEnterTransition(fade);
+
+        }
+
     }
 }
