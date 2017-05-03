@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="com.alavande.marineassistant">
 
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
 
     <application
         android:name="android.support.multidex.MultiDexApplication"
@@ -16,12 +16,19 @@
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:replace="android:icon">
+        <activity
+            android:name="com.itheima.dialogviewpager.MainActivity"
+            tools:node="remove" />
+
         <meta-data
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyD6KV8a1625EV8c7ohG8DhSdDZ42_sJa5I" />
         <meta-data
             android:name="com.google.android.awareness.API_KEY"
             android:value="AIzaSyAoAdNxV_tcqt_qa-Opof-EUysWuh6GaxQ" />
+
+        <meta-data android:name="com.facebook.sdk.ApplicationId"
+            android:value="@string/facebook_app_id"/>
 
         <activity android:name=".MainActivity">
             <intent-filter>
@@ -37,7 +44,14 @@
         <activity android:name=".AboutUsActivity" />
         <activity android:name=".FishCheckActivity" />
         <activity android:name=".MapZoneActivity" />
-        <activity android:name=".WindForecastActivity"></activity>
+        <activity android:name=".WindForecastActivity" />
+        <activity android:name=".RecorderChoseActivity" />
+        <activity android:name=".ActivityRecorderActivity" />
+        <activity android:name=".LocationEventsActivity"></activity>
+
+        <provider android:authorities="com.facebook.app.FacebookContentProvider640879469441562"
+            android:name="com.facebook.FacebookContentProvider"
+            android:exported="true" />
     </application>
 
 </manifest>
