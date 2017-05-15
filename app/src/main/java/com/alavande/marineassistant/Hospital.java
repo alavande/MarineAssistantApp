@@ -4,6 +4,7 @@ package com.alavande.marineassistant;
  * Created by hasee on 2017/03/29.
  */
 
+// entity class
 public class Hospital {
 
     private int postcode;

@@ -4,6 +4,7 @@ package com.alavande.marineassistant;
  * Created by hasee on 2017/04/02.
  */
 
+// entity class
 public class BoatMooring {
 
     private double longitude, latitude;

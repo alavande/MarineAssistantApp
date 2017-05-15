@@ -9,8 +9,10 @@ import android.support.v4.app.FragmentPagerAdapter;
  * Created by hasee on 2017/04/13.
  */
 
+// adapter for controlling page change in about us activity
 public class AboutUsPageAdapter extends FragmentPagerAdapter {
 
+    // number of pages in activity
     private static final int PAGE_COUNT = 2;
     private Context context;
 
@@ -21,13 +23,11 @@ public class AboutUsPageAdapter extends FragmentPagerAdapter {
 
     @Override
     public Fragment getItem(int position) {
+        // return fragment for displaying
         switch (position) {
             case 0:
                 Fragment aboutUsFragment = new AboutUsFragment();
                 return aboutUsFragment;
-//            case 1:
-//                Fragment contactUsFragment = new ContactUsFragment();
-//                return contactUsFragment;
             case 1:
                 Fragment instructionFragment = new InstructionFragment();
                 return instructionFragment;
@@ -43,11 +43,10 @@ public class AboutUsPageAdapter extends FragmentPagerAdapter {
 
     @Override
     public CharSequence getPageTitle(int position) {
+        // return page title for each fragment
         switch (position) {
             case 0:
                 return "About Us";
-//            case 1:
-//                return "Contact Us";
             case 1:
                 return "Instruction";
             default:

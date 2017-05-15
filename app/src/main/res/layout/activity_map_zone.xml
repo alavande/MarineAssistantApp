@@ -5,6 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context="com.alavande.marineassistant.MapZoneActivity">
+
     <android.support.design.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
@@ -15,21 +16,46 @@
             android:layout_height="match_parent"
             android:name="com.google.android.gms.maps.MapFragment"/>
 
-        <TextView
-            android:layout_marginLeft="165dp"
-            android:background="@drawable/corners_bg2"
-            android:gravity="center"
-            android:layout_centerHorizontal="true"
-            android:layout_marginTop="20dp"
-            android:layout_alignParentTop="true"
-            android:id="@+id/zone_title"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="information"
-            android:textSize="15sp"/>
-
         <include layout="@layout/zone_bottom_sheet"
-            android:visibility="visible" />
+            android:visibility="gone" />
+
+        <include layout="@layout/bottom_sheet"
+            android:visibility="gone"/>
     </android.support.design.widget.CoordinatorLayout>
+
+    <TextView
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/corners_bg2"
+        android:gravity="center"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="20dp"
+        android:layout_alignParentTop="true"
+        android:id="@+id/zone_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="information"
+        android:textSize="15sp"/>
+<!--
+    <ImageView
+        android:id="@+id/test_img"
+        android:visibility="gone"
+        android:layout_centerInParent="true"
+        android:layout_width="60dp"
+        android:layout_height="60dp" />
+-->
+    <FrameLayout
+        android:id="@+id/share_btn"
+        android:visibility="gone"
+        android:background="#ffffff"
+        android:layout_margin="16dp"
+        android:layout_alignParentBottom="true"
+        android:layout_width="35dp"
+        android:layout_height="35dp">
+        <ImageView
+            android:layout_gravity="center"
+            android:src="@drawable/share"
+            android:layout_width="30dp"
+            android:layout_height="30dp" />
+    </FrameLayout>
 </RelativeLayout>
 

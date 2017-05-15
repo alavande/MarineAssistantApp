@@ -8,12 +8,12 @@
 
     android:orientation="horizontal"
     android:layout_width="match_parent"
-    android:layout_height="130dp"
+    android:layout_height="120dp"
     android:gravity="center"
     android:background="@android:color/holo_orange_light">
 
     <LinearLayout
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="15dp"
         android:orientation="vertical"
         android:layout_width="0dp"
         android:layout_height="match_parent"
@@ -38,11 +38,14 @@
                     android:layout_height="25dp" />
             </LinearLayout>
             <AutoCompleteTextView
+                android:gravity="center"
                 android:background="#29000000"
                 android:id="@+id/start_text"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:maxLines="1"
+                android:layout_height="30dp"
                 android:layout_weight="4"
+                android:textSize="15sp"
                 android:hint="    start location"
                 android:textColorHint="@android:color/white"
                 android:textColor="@android:color/primary_text_dark_nodisable"/>
@@ -67,12 +70,15 @@
                     android:layout_height="30dp"/>
             </LinearLayout>
             <AutoCompleteTextView
+                android:gravity="center"
                 android:background="#29000000"
                 android:id="@+id/end_text"
+                android:maxLines="1"
                 android:layout_width="0dp"
-                android:layout_height="40dp"
+                android:layout_height="30dp"
                 android:layout_weight="4"
                 android:hint="    end location"
+                android:textSize="15sp"
                 android:textColorHint="@android:color/white"
                 android:textColor="@android:color/white"/>
         </LinearLayout>

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:orientation="vertical"
+    android:id="@+id/activity_recorder"
+    android:background="@drawable/main_back3_min"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.alavande.marineassistant.ActivityRecorderActivity">
+
+    <ImageView
+        android:background="@drawable/text1"
+        android:layout_marginTop="26dp"
+        android:layout_marginLeft="24dp"
+        android:layout_width="127dp"
+        android:layout_height="40dp"/>
+
+    <RelativeLayout
+        android:paddingBottom="@dimen/activity_vertical_margin"
+        android:paddingLeft="@dimen/activity_horizontal_margin"
+        android:paddingRight="@dimen/activity_horizontal_margin"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+        <android.support.v7.widget.RecyclerView
+            android:id="@+id/recorder_recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"/>
+
+        <android.support.design.widget.FloatingActionButton
+            android:src="@drawable/ic_add_white"
+            android:layout_margin="16dp"
+            android:layout_alignParentBottom="true"
+            android:layout_alignParentRight="true"
+            android:id="@+id/add_recorder"
+            android:layout_width="60dp"
+            android:layout_height="60dp" />
+    </RelativeLayout>
+</LinearLayout>

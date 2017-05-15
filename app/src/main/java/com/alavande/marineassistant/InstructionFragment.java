@@ -15,8 +15,8 @@ import com.itheima.dialogviewpager.ItHeiMaDialog;
 /**
  * A simple {@link Fragment} subclass.
  */
-public class InstructionFragment extends Fragment implements View.OnClickListener {
 
+public class InstructionFragment extends Fragment implements View.OnClickListener {
 
     private ImageView first, second, third, fourth;
 
@@ -49,12 +49,22 @@ public class InstructionFragment extends Fragment implements View.OnClickListene
     private void initData(){
     }
 
+    // create popup window for first instruction
     private void popupFirst(){
 
         FragmentManager fm = getActivity().getFragmentManager();
 
         ItHeiMaDialog.getInstance()
-                .setImages(new int[]{com.itheima.dialogviewpager.R.drawable.new_user_guide_1, com.itheima.dialogviewpager.R.drawable.new_user_guide_2, com.itheima.dialogviewpager.R.drawable.new_user_guide_3, com.itheima.dialogviewpager.R.drawable.new_user_guide_4})
+                .setImages(new int[]{R.drawable.ins1, R.drawable.ins2, R.drawable.ins3, R.drawable.ins4, R.drawable.ins5, R.drawable.ins6, R.drawable.ins7, R.drawable.ins8})
+                .setPageTransformer(new DepthPageTransformer()).show(fm);
+    }
+
+    private void popupThird(){
+
+        FragmentManager fm = getActivity().getFragmentManager();
+
+        ItHeiMaDialog.getInstance()
+                .setImages(new int[]{R.drawable.ins14, R.drawable.ins15, R.drawable.ins16, R.drawable.ins17, R.drawable.ins18})
                 .setPageTransformer(new DepthPageTransformer()).show(fm);
     }
 
@@ -63,13 +73,22 @@ public class InstructionFragment extends Fragment implements View.OnClickListene
         FragmentManager fm = getActivity().getFragmentManager();
 
         ItHeiMaDialog.getInstance()
-                .setImages(new int[]{com.itheima.dialogviewpager.R.drawable.new_user_guide_1, com.itheima.dialogviewpager.R.drawable.new_user_guide_2, com.itheima.dialogviewpager.R.drawable.new_user_guide_3, com.itheima.dialogviewpager.R.drawable.new_user_guide_4})
+                .setImages(new int[]{R.drawable.ins9, R.drawable.ins10, R.drawable.ins11, R.drawable.ins12, R.drawable.ins13})
                 .setPageTransformer(new DepthPageTransformer()).show(fm);
     }
 
+    private void popupFourth(){
+
+        FragmentManager fm = getActivity().getFragmentManager();
+
+        ItHeiMaDialog.getInstance()
+                .setImages(new int[]{R.drawable.ins19, R.drawable.ins20, R.drawable.ins21})
+                .setPageTransformer(new DepthPageTransformer()).show(fm);
+    }
 
     @Override
     public void onClick(View view) {
+        // click event to show different instruction window for different button
         switch (view.getId()) {
             case R.id.first_instruction_view:
                 popupFirst();
@@ -78,10 +97,10 @@ public class InstructionFragment extends Fragment implements View.OnClickListene
                 popupSecond();
                 break;
             case R.id.third_instruction_view:
-                popupFirst();
+                popupThird();
                 break;
             case R.id.fourth_instruction_view:
-                popupSecond();
+                popupFourth();
                 break;
             default:
                 break;

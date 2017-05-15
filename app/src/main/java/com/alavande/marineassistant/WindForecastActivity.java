@@ -3,7 +3,9 @@ package com.alavande.marineassistant;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.webkit.WebSettings;
 import android.webkit.WebView;
+import android.webkit.WebViewClient;
 
 public class WindForecastActivity extends AppCompatActivity {
 
@@ -24,6 +26,9 @@ public class WindForecastActivity extends AppCompatActivity {
             url = "http://wind.willyweather.com.au/vic.html";
         }
         windForecastView = (WebView) findViewById(R.id.wind_forecast_webview);
+        WebSettings settings = windForecastView.getSettings();
+        settings.setJavaScriptEnabled(true);
+        windForecastView.setWebViewClient(new WebViewClient());
         windForecastView.loadUrl(url);
     }
 }

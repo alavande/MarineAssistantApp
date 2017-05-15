@@ -1,6 +1,8 @@
 <resources>
     <string name="app_name">Marine Assistant</string>
 
+    <string name="facebook_app_id">640879469441562</string>
+
     <string name="hello_blank_fragment">Hello blank fragment</string>
 
     <string name="dummy_text1"><b>About us</b> \nWe are team summit who implement this software for users use in seaside.</string>

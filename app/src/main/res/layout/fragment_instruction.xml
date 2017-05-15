@@ -31,7 +31,7 @@
                     android:layout_height="match_parent">
                     <ImageView
                     android:id="@+id/first_instruction_view"
-                    android:background="@drawable/first_image"
+                    android:background="@drawable/ins1"
                     android:layout_width="165dp"
                     android:layout_height="270dp"/>
                     <TextView
@@ -55,7 +55,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent">
                     <ImageView
-                        android:background="@drawable/second_image"
+                        android:background="@drawable/ins9"
                         android:id="@+id/second_instruction_view"
                         android:layout_width="165dp"
                         android:layout_height="270dp"/>
@@ -90,7 +90,7 @@
                     android:layout_height="match_parent">
                     <ImageView
                         android:id="@+id/third_instruction_view"
-                        android:background="@drawable/third_image"
+                        android:background="@drawable/ins14"
                         android:layout_width="165dp"
                         android:layout_height="270dp"/>
                     <TextView
@@ -115,7 +115,7 @@
                     android:layout_height="match_parent">
                     <ImageView
                         android:id="@+id/fourth_instruction_view"
-                        android:background="@drawable/fourth_image"
+                        android:background="@drawable/ins19"
                         android:layout_width="165dp"
                         android:layout_height="270dp"/>
                     <TextView

@@ -14,6 +14,8 @@ import java.util.List;
  * Created by hasee on 2017/04/08.
  */
 
+
+// get route line data
 public class DirectionsJSONParser {
 
     /** Receives a JSONObject and returns a list of lists containing latitude and longitude */

@@ -1,15 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <group android:checkableBehavior="single">
-        <item
-            android:id="@+id/nav_police"
-            android:icon="@drawable/police_icon"
-            android:title="Police" />
-
-        <item
-            android:id="@+id/nav_hospital"
-            android:icon="@drawable/hospital_icon"
-            android:title="Hospital" />
 
         <item
             android:title="Boat Facilities">
@@ -23,6 +14,21 @@
                     android:id="@+id/nav_boat_mooring"
                     android:icon="@drawable/mooring_icon1"
                     android:title="Boat Mooring" />
+            </menu>
+        </item>
+
+        <item
+            android:title="Emergency Facilities">
+            <menu>
+                <item
+                    android:id="@+id/nav_police"
+                    android:icon="@drawable/police_icon"
+                    android:title="Police" />
+
+                <item
+                    android:id="@+id/nav_hospital"
+                    android:icon="@drawable/hospital_icon"
+                    android:title="Hospital" />
             </menu>
         </item>
 

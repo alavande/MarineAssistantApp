@@ -4,15 +4,20 @@ import android.*;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ValueAnimator;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.graphics.drawable.GradientDrawable;
 import android.location.Address;
 import android.location.Geocoder;
 import android.location.Location;
+import android.location.LocationManager;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Handler;
@@ -32,10 +37,14 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.transition.Fade;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
+import android.view.animation.AlphaAnimation;
+import android.view.animation.Animation;
 import android.widget.AdapterView;
 import android.widget.AutoCompleteTextView;
 import android.widget.Button;
@@ -44,6 +53,7 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.PopupWindow;
 import android.widget.RelativeLayout;
+import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -74,6 +84,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.maps.android.SphericalUtil;
+import com.google.maps.android.clustering.ClusterManager;
 
 import org.json.JSONObject;
 
@@ -89,11 +100,18 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 
+import tourguide.tourguide.ChainTourGuide;
+import tourguide.tourguide.Overlay;
+import tourguide.tourguide.Sequence;
+import tourguide.tourguide.ToolTip;
+
 public class MapActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
         com.google.android.gms.location.LocationListener, FloatingSearchView.OnSearchListener,
         GoogleMap.OnMyLocationButtonClickListener, NavigationView.OnNavigationItemSelectedListener,
         GoogleMap.OnMapClickListener, GoogleMap.OnMapLongClickListener, GoogleMap.OnMarkerClickListener, View.OnClickListener,
         GoogleApiClient.OnConnectionFailedListener{
+
+    private ChainTourGuide mTourGuideHandler;
 
     private DrawerLayout drawerLayout;
     private RelativeLayout popupWindow;
@@ -142,16 +160,20 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             new LatLng(-38.055358, 140.966645),
             new LatLng(-37.502666, 149.878801));
 
+    private double returnRange = -1;
+
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.map_layout);
 
-//        setupWindowAnimations();
+        dismissStatusBar();
 
         context = this;
         handler = new Handler();
 
+        // components in popup window
         carMode = (ImageView) findViewById(R.id.car_mode);
         carMode.setOnClickListener(this);
         shipMode = (ImageView) findViewById(R.id.ship_mode);
@@ -166,6 +188,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         endPoint = (AutoCompleteTextView) findViewById(R.id.end_text);
         endPoint.setOnItemClickListener(endPointClickListener);
 
+        // components in bottom sheet
         llBottomSheet = (LinearLayout) findViewById(R.id.bottom_sheet);
         bottomSheetBehavior = BottomSheetBehavior.from(llBottomSheet);
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
@@ -180,6 +203,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         phoneText = (TextView) findViewById(R.id.map_info_phone_text);
         loccationText = (TextView) findViewById(R.id.map_info_location_text);
 
+        // components in main layout
         drawerLayout = (DrawerLayout) findViewById(R.id.left_drawer_layout);
 
         navigationView = (NavigationView) findViewById(R.id.nav_view);
@@ -199,6 +223,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         });
         autoCompleteTextView.setOnItemClickListener(mAutocompleteClickListener);
 
+        // map show in main layout
         mapFragment = (MapFragment) getFragmentManager().findFragmentById(R.id.map_fragment);
         mapView = mapFragment.getView();
         mapFragment.getMapAsync(this);
@@ -211,7 +236,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     public void onMapReady(GoogleMap googleMap) {
 
         map = googleMap;
-
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(-37.877203, 145.043997), 10));
+        // check permission and build google client api
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
             if (ContextCompat.checkSelfPermission(this,
                     android.Manifest.permission.ACCESS_FINE_LOCATION)
@@ -230,10 +256,33 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             resetMyLocationButton();
         }
 
+        // set on each onclick listener for map
         map.setOnMyLocationButtonClickListener(this);
         map.setOnMapClickListener(this);
         map.setOnMapLongClickListener(this);
         map.setOnMarkerClickListener(this);
+
+        // check if this is first time enter in this activity
+        MyDatabaseHelper helper = new MyDatabaseHelper(this);
+        SQLiteDatabase db = helper.getWritableDatabase();
+        Cursor cursor = db.rawQuery("select * from first_load;", null);
+        cursor.moveToFirst();
+        while (cursor.moveToNext()) {
+            String view = cursor.getString(cursor.getColumnIndex("view"));
+            if (view.equals("map")) {
+                int num = cursor.getInt(cursor.getColumnIndex("num"));
+                Log.i("num", num+"");
+                if (num == 0) {
+                    // show instruction if this is first time
+                    runOverlay();
+                    // update database
+                    ContentValues cv = new ContentValues();
+                    cv.put("num", 1);
+                    db.update("first_load", cv, "view = ?", new String[]{"map"});
+                }
+                break;
+            }
+        }
     }
 
     public void buildGoogleApiClient(){
@@ -244,6 +293,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 .addApi(Places.GEO_DATA_API)
                 .addApi(Places.PLACE_DETECTION_API)
                 .build();
+
+        // set adapters
         autocompleteAdapter = new PlaceAutocompleteAdapter(this, android.R.layout.simple_list_item_1,
                 client, BOUNDS_GREATER_VICTORIA, null);
         autoCompleteTextView.setAdapter(autocompleteAdapter);
@@ -261,8 +312,19 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         currentLatLng = new LatLng(location.getLatitude(), location.getLongitude());
 
         addMarkerToMap(currentLatLng);
-        currentMarker = marker;
+        addSearchMarkerToMap(currentLatLng);
 
+//        MarkerOptions options = new MarkerOptions();
+//        options.title(marker.getTitle());
+//        options.snippet(marker.getSnippet());
+//        options.position(marker.getPosition());
+//        options.icon(BitmapDescriptorFactory.fromResource(R.drawable.current_marker));
+//        currentMarker = map.addMarker(options);
+//        marker.setVisible(false);
+        currentMarker = marker;
+//        currentMarker.setIcon(BitmapDescriptorFactory.fromResource(R.drawable.current_marker));
+
+        // get nearest data for current location
         new Thread(new Runnable() {
             @Override
             public void run() {
@@ -273,7 +335,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
         }).start();
 
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17));
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 13));
 
         if (client != null) {
             LocationServices.FusedLocationApi.removeLocationUpdates(client, this);
@@ -298,6 +360,8 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
     }
 
+
+    // check and request permission
     private void checkLocationPermission(){
         if (ContextCompat.checkSelfPermission(this, android.Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this, android.Manifest.permission.ACCESS_FINE_LOCATION)) {
@@ -525,7 +589,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
 
             }
         }.execute(currentLatLng);
-        map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 17));
+        map.animateCamera(CameraUpdateFactory.newLatLngZoom(currentLatLng, 13));
         startMarker = marker;
         return true;
     }
@@ -674,38 +738,45 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         Bundle bundle = new Bundle();
         String url = null;
 
+        Intent intent1 = new Intent();
+        Bundle bundle1 = new Bundle();
+
         switch (item.getItemId()) {
             case R.id.nav_police:
 
 //                searchPolice();
-                removeOtherMarkers(policeMarker, null);
-                zoomMapToFitMarker(policeMarker);
+//                removeOtherMarkers(policeMarker, null);
+//                zoomMapToFitMarker(policeMarker);
+                getRange(2);
                 break;
             case R.id.nav_hospital:
 
 //                searchHospital();
-                removeOtherMarkers(hospitalMarker, null);
-                zoomMapToFitMarker(hospitalMarker);
+//                removeOtherMarkers(hospitalMarker, null);
+//                zoomMapToFitMarker(hospitalMarker);
+                getRange(1);
                 break;
             case R.id.nav_boat_access:
 
 //                searchBoatAccess();
-                removeOtherMarkers(boatAccessMarker, secondBoatAccessMarker);
-                if (secondBoatAccessMarker != null) {
-                    zoomMapToFitTwoMarkers(boatAccessMarker, secondBoatAccessMarker);
-                } else {
-                    zoomMapToFitMarker(boatAccessMarker);
-                }
+//                removeOtherMarkers(boatAccessMarker, secondBoatAccessMarker);
+//                if (secondBoatAccessMarker != null) {
+//                    zoomMapToFitTwoMarkers(boatAccessMarker, secondBoatAccessMarker);
+//                } else {
+//                    zoomMapToFitMarker(boatAccessMarker);
+//                }
+                getRange(3);
                 break;
             case R.id.nav_boat_mooring:
 
 //                searchBoatMooring();
-                removeOtherMarkers(boatMooringMarker, secondBoatMooringMarker);
-                if (secondBoatMooringMarker != null) {
-                    zoomMapToFitTwoMarkers(boatMooringMarker, secondBoatMooringMarker);
-                } else {
-                    zoomMapToFitMarker(boatMooringMarker);
-                }
+//                removeOtherMarkers(boatMooringMarker, secondBoatMooringMarker);
+//                if (secondBoatMooringMarker != null) {
+//                    zoomMapToFitTwoMarkers(boatMooringMarker, secondBoatMooringMarker);
+//                } else {
+//                    zoomMapToFitMarker(boatMooringMarker);
+//                }
+                getRange(4);
 //                Toast.makeText(this, "In progress...", Toast.LENGTH_SHORT).show();
                 break;
             case R.id.nav_about_us:
@@ -720,6 +791,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
                 bundle.putInt("item", 1);
                 intent.putExtras(bundle);
                 startActivity(intent);
+                finish();
                 break;
             case R.id.nav_wind:
                 intent.setClass(this, WindForecastActivity.class);
@@ -735,15 +807,77 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             case R.id.nav_diving:
                 intent.setClass(this, WindForecastActivity.class);
                 url = "http://www.divevictoria.com.au/boat-diving/dive-site-interactive-map.html";
+//                url = "https://www.google.com.au/maps?source=tldsi&hl=zh-CN";
                 bundle.putString("url", url);
                 intent.putExtras(bundle);
                 startActivity(intent);
+                finish();
                 break;
             default:
                 break;
         }
         drawerLayout.closeDrawers();
         return true;
+    }
+
+    private void getRange(final int building){
+        LinearLayout alerLinear = new LinearLayout(this);
+        final SeekBar seekBar = new SeekBar(this);
+        alerLinear.setOrientation(LinearLayout.VERTICAL);
+        final TextView textView = new TextView(this);
+        textView.setText("    Range: 0 km.");
+        seekBar.setMax(50);
+        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                textView.setText("    Range: " + i + " km.");
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeekBar seekBar) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeekBar seekBar) {
+
+            }
+        });
+        alerLinear.addView(seekBar);
+        alerLinear.addView(textView);
+        final AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog dialog = builder
+                .setTitle("Please select a range (km)")
+                .setView(alerLinear)
+                .setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialogInterface, int i) {
+                        try {
+
+                            returnRange = (double) seekBar.getProgress();
+                            Log.i("range", returnRange+"");
+//
+                            if (returnRange == 0) {
+                                Toast.makeText(context, "Range can not be 0", Toast.LENGTH_SHORT).show();
+                                return;
+                            }
+                            Intent intent = new Intent();
+                            Bundle bundle = new Bundle();
+                            intent.setClass(context, MapZoneActivity.class);
+                            bundle.putInt("item", 4);
+                            bundle.putDouble("range", returnRange);
+                            bundle.putInt("building", building);
+                            intent.putExtras(bundle);
+                            startActivity(intent);
+                            finish();
+                        } catch (Exception e) {
+                            Toast.makeText(context, "Please input a range between in (0, 20] km.", Toast.LENGTH_SHORT).show();
+                        }
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .create();
+        dialog.show();
     }
 
     public void removeOtherMarkers(Marker marker1, Marker marker2){
@@ -835,6 +969,16 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
     @Override
     public void onMapClick(LatLng latLng) {
 
+        startPoint.setText("    " + "Current Location");
+        startMarker = generateMarker(marker.getPosition(), marker.getTitle());
+
+        if (startMarker != null) {
+            startMarker.setVisible(false);
+        }
+        if (endMarker != null) {
+            endMarker.setVisible(false);
+        }
+
         animClose(popupWindow);
         bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
     }
@@ -892,21 +1036,13 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             polyline.remove();
         }
 
-        if (endMarker == null) {
-            endMarker = generateMarker(marker.getPosition(), marker.getTitle());
-            endMarker.setVisible(false);
-        }
-
-//        if (searchMarker != null) {
-//            searchMarker.remove();
+//        if (endMarker == null) {
+//            endMarker = generateMarker(marker.getPosition(), marker.getTitle());
+//            endMarker.setVisible(false);
 //        }
-
-        if (startMarker != null) {
-            startMarker.setVisible(false);
-        }
-
-//        if (endMarker == null && searchMarker == null) {
-//            searchMarker = generateMarker(marker.getPosition(), marker.getTitle());
+//
+//        if (startMarker != null) {
+//            startMarker.setVisible(false);
 //        }
 
         if (bottomSheetBehavior.getState() == BottomSheetBehavior.STATE_COLLAPSED){
@@ -924,31 +1060,42 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             phoneText.setText("No Phone Number Available.");
         }
 
-        if (startPoint.isFocused()) {
-            if (searchMarker != null) {
-                if (searchMarker.isVisible()) {
-                    searchMarker.setVisible(false);
-                }
-            }
-            startPoint.setText("    " + marker.getTitle());
+//        if (startPoint.isFocused()) {
+//            if (searchMarker != null) {
+//                if (searchMarker.isVisible()) {
+//                    searchMarker.setVisible(false);
+//                }
+//            }
+//            startPoint.setText("    " + marker.getTitle());
 //            startMarker.setPosition(marker.getPosition());
 //            startMarker.setTitle(marker.getTitle());
-            startMarker.setPosition(marker.getPosition());
-            startMarker.setTitle(marker.getTitle());
+//        }
+//        if (endPoint.isFocused() || (popupWindow.getVisibility() ==  View.GONE)) {
+//            if (startMarker != null && searchMarker != null && searchMarker.isVisible()) {
+//                searchMarker.setVisible(false);
+//            }
+//            endPoint.setText("    " + marker.getTitle());
+//            endMarker = generateMarker(marker.getPosition(), marker.getTitle());
+//        }
+//
+//        if (!endPoint.isFocused() && !startPoint.isFocused() && popupWindow.getVisibility() == View.VISIBLE){
+//            startPoint.setText(marker.getTitle());
+//            startMarker = generateMarker(marker.getPosition(), marker.getTitle());
+//        }
+
+        if (endMarker != null) {
+            endMarker.setVisible(false);
         }
-        if (endPoint.isFocused() || (popupWindow.getVisibility() ==  View.GONE)) {
-            if (startMarker != null && searchMarker != null && searchMarker.isVisible()) {
-                searchMarker.setVisible(false);
-            }
-            endPoint.setText("    " + marker.getTitle());
-//            endMarker.setPosition(marker.getPosition());
-//            endMarker.setTitle(marker.getTitle());
-            endMarker = generateMarker(marker.getPosition(), marker.getTitle());
+        if (startMarker != null) {
+            startMarker.setVisible(false);
         }
 
-        if (!endPoint.isFocused() && !startPoint.isFocused() && popupWindow.getVisibility() == View.VISIBLE){
-            startPoint.setText(marker.getTitle());
+        if (popupWindow.getVisibility() == View.VISIBLE && startPoint.isFocused()) {
+            startPoint.setText("    " + marker.getTitle());
             startMarker = generateMarker(marker.getPosition(), marker.getTitle());
+        } else {
+            endPoint.setText("    " + marker.getTitle());
+            endMarker = generateMarker(marker.getPosition(), marker.getTitle());
         }
 
         return true;
@@ -1675,6 +1822,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         if (drawerLayout.isDrawerOpen(navigationView)){
             drawerLayout.closeDrawers();
         } else {
+            finish();
             super.onBackPressed();
         }
     }
@@ -1711,6 +1859,31 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         }
     };
 
+    private boolean checkLocation(Place place){
+
+        Geocoder geocoder = new Geocoder(context);
+        try {
+            Address address = geocoder.getFromLocation(place.getLatLng().latitude, place.getLatLng().longitude, 1).get(0);
+            String countryCode = address.getCountryCode();
+            Log.i("countryCode", countryCode);
+            if (!countryCode.equals("AU")) {
+                Toast.makeText(context, "Not in Australia", Toast.LENGTH_SHORT).show();
+                return false;
+            } else {
+                int postcode = Integer.parseInt(address.getPostalCode());
+                Log.i("postcode", postcode+"");
+                if (postcode < 3000 || postcode > 3999) {
+                    Toast.makeText(context, "Not in Victoria", Toast.LENGTH_SHORT).show();
+                    return false;
+                }
+            }
+        } catch (Exception e) {
+            Toast.makeText(context, "Unknown Location", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+        return true;
+    }
+
     private ResultCallback<PlaceBuffer> mUpdatePlaceDetailsCallback
             = new ResultCallback<PlaceBuffer>() {
         @Override
@@ -1723,16 +1896,11 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             }
             // Get the Place object from the buffer.
             final Place place = places.get(0);
-
             // Format details of the place for display and show it in a TextView.
-            Log.i("result", place.getAddress() + "");
-            String country = place.getId().substring(place.getId().length() - 2);
-            Log.i("country", country);
-            if (!country.equals("AU")) {
-                Toast.makeText(context, "Not in Australia", Toast.LENGTH_SHORT).show();
+
+            if (!checkLocation(place)) {
                 return;
             }
-
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
             // Display the third party attributions if set.
 //            if (marker != null) {
@@ -1756,8 +1924,21 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             LatLng latLng = searchMarker.getPosition();
             endMarker = searchMarker;
             animOpen(popupWindow);
+
+            bottomTitle.setText(endMarker.getTitle());
+            bottomContent.setText(endMarker.getSnippet());
+            loccationText.setText(endMarker.getPosition().latitude + ", " + endMarker.getPosition().longitude);
+            if (endMarker.getTag() != null) {
+                phoneText.setText(endMarker.getTag().toString());
+            } else {
+                phoneText.setText("No Phone Number Available.");
+            }
+
+            endPoint.setText(endMarker.getTitle());
+
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
             navigationBtn.setVisibility(View.GONE);
+
 
             searchHospitalAtOtherPlace(latLng);
             searchPoliceAtOtherPlace(latLng);
@@ -1815,10 +1996,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             final Place place = places.get(0);
 
             // Format details of the place for display and show it in a TextView.
-            Log.i("result", place.getAddress() + "");
-            String country = place.getId().substring(place.getId().length() - 2);
-            if (!country.equals("AU")) {
-                Toast.makeText(context, "Not in Australia", Toast.LENGTH_SHORT).show();
+            if (!checkLocation(place)) {
                 return;
             }
 
@@ -1885,10 +2063,7 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
             final Place place = places.get(0);
 
             // Format details of the place for display and show it in a TextView.
-            Log.i("result", place.getAddress() + "");
-            String country = place.getId().substring(place.getId().length() - 2);
-            if (!country.equals("AU")) {
-                Toast.makeText(context, "Not in Australia", Toast.LENGTH_SHORT).show();
+            if (!checkLocation(place)) {
                 return;
             }
 
@@ -2089,13 +2264,105 @@ public class MapActivity extends AppCompatActivity implements OnMapReadyCallback
         downloadTask.execute(url);
     }
 
-    private void setupWindowAnimations(){
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Fade fade = new Fade();
-            fade.setDuration(1000);
-            getWindow().setEnterTransition(fade);
+    private void runOverlay(){
+        Animation mEnterAnimation = new AlphaAnimation(0f, 1f);
+        mEnterAnimation.setDuration(600);
+        mEnterAnimation.setFillAfter(true);
 
+        Animation mExitAnimation = new AlphaAnimation(1f, 0f);
+        mExitAnimation.setDuration(600);
+        mExitAnimation.setFillAfter(true);
+
+        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+        startNavigationBtn.setVisibility(View.VISIBLE);
+
+        ChainTourGuide tourGuide1 = ChainTourGuide.init(this)
+                .setToolTip(new ToolTip()
+                        .setTitle("Search Bar with Menu")
+                        .setDescription("Search location on the map, menu button for more operations...")
+                        .setGravity(Gravity.BOTTOM)
+                )
+                // note that there is no Overlay here, so the default one will be used
+                .playLater(autoCompleteTextView);
+
+        ChainTourGuide tourGuide2 = ChainTourGuide.init(this)
+                .setToolTip(new ToolTip()
+                        .setTitle("Navigation Button")
+                        .setDescription("To get popup window for locations...")
+                        .setGravity(Gravity.TOP | Gravity.LEFT)
+                        .setBackgroundColor(Color.parseColor("#c0392b"))
+                )
+                .setOverlay(new Overlay()
+                        .setBackgroundColor(Color.parseColor("#EE2c3e50"))
+                        .setEnterAnimation(mEnterAnimation)
+                        .setExitAnimation(mExitAnimation)
+                        .setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                startNavigationBtn.setVisibility(View.GONE);
+                                popupWindow.setVisibility(View.VISIBLE);
+                                mTourGuideHandler.next();
+                            }
+                        })
+                )
+                .playLater(startNavigationBtn);
+
+        ChainTourGuide tourGuide3 = ChainTourGuide.init(this)
+                .setToolTip(new ToolTip()
+                        .setTitle("Start Navigation Button")
+                        .setDescription("To start your navigation....")
+                        .setGravity(Gravity.TOP)
+                )
+                // note that there is no Overlay here, so the default one will be used
+                .playLater(navigationBtn);
+
+        ChainTourGuide tourGuide4 = ChainTourGuide.init(this)
+                .setToolTip(new ToolTip()
+                        .setTitle("Car Mode")
+                        .setDescription("To change navigation mode from car to ship...")
+                        .setGravity(Gravity.BOTTOM)
+                ).setOverlay(new Overlay()
+                        .setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        popupWindow.setVisibility(View.GONE);
+                        startNavigationBtn.setVisibility(View.VISIBLE);
+                        bottomSheetBehavior.setState(BottomSheetBehavior.STATE_HIDDEN);
+                        mTourGuideHandler.next();
+                    }
+                }))
+                // note that there is no Overlay here, so the default one will be used
+                .playLater(carMode);
+
+        Sequence sequence = new Sequence.SequenceBuilder()
+                .add(tourGuide1, tourGuide2, tourGuide3, tourGuide4)
+                .setDefaultOverlay(new Overlay()
+                        .setEnterAnimation(mEnterAnimation)
+                        .setExitAnimation(mExitAnimation)
+                        .setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                mTourGuideHandler.next();
+                            }
+                        })
+                )
+                .setDefaultPointer(null)
+                .setContinueMethod(Sequence.ContinueMethod.OverlayListener)
+                .build();
+
+        mTourGuideHandler = ChainTourGuide.init(this).playInSequence(sequence);
+    }
+
+    private void dismissStatusBar(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {//5.0及以上
+            View decorView = getWindow().getDecorView();
+            int option = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                    | View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
+            decorView.setSystemUiVisibility(option);
+            getWindow().setStatusBarColor(Color.TRANSPARENT);
+        } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {//4.4到5.0
+            WindowManager.LayoutParams localLayoutParams = getWindow().getAttributes();
+            localLayoutParams.flags = (WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS | localLayoutParams.flags);
         }
-
     }
 }

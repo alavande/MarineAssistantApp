@@ -121,7 +121,7 @@
                 android:gravity="center">
 
                 <ImageView
-                    android:background="@drawable/electricity_icon"
+                    android:background="@drawable/electricity_icon2"
                     android:layout_width="30dp"
                     android:layout_height="30dp" />
             </LinearLayout>
@@ -150,7 +150,7 @@
                 android:gravity="center">
 
                 <ImageView
-                    android:background="@drawable/fuel_icon"
+                    android:background="@drawable/fuel_icon_2"
                     android:layout_width="30dp"
                     android:layout_height="30dp" />
             </LinearLayout>
